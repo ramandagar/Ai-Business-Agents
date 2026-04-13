@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 3D Receipt</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #e5e5e5;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .instructions {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="instructions">Grab and drag the receipt</div>
+
+    <script>
+        // ============================================
+        // WEBGL SETUP
+        // ============================================
+        const canvas = document.getElementById('canvas');
+        const gl = canvas.getContext('webgl', { antialias: true, alpha: false });
+
+        if (!gl) {
+            alert('WebGL not supported');
+            throw new Error('WebGL not supported');
+        }
+
+        // ============================================
+        // RECEIPT TEXTURE GENERATION
+        // ============================================
+        function createReceiptTexture() {
+            const textureCanvas = document.createElement('canvas');
+            textureCanvas.width = 512;
+            textureCanvas.height = 1024;
+            const ctx = textureCanvas.getContext('2d');
+
+            // Paper background - slightly off-white
+            ctx.fillStyle = '#f8f6f0';
+            ctx.fillRect(0, 0, 512, 1024);
+
+            // Add subtle paper texture
+            ctx.fillStyle = '#f0ece4';
+            for (let i = 0; i < 1000; i++) {
+                ctx.fillRect(
+                    Math.random() * 512,
+                    Math.random() * 1024,
+                    Math.random() * 2,
+                    Math.random() * 2
+                );
+            }
+
+            // Font setup
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+
+            // Header - THE FLORNRM SHOP
+            ctx.font = 'bold 28px Courier New, monospace';
+            ctx.fillText('THE FLORNRM SHOP', 256, 100);
+
+            // Address
+            ctx.font = '14px Courier New, monospace';
+            ctx.fillText('42 Mesh Lane, WebGL City', 256, 130);
+            ctx.fillText('Tel: (555) 042-1337', 256, 155);
+
+            // Dashed line
+            ctx.strokeStyle = '#666';
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(40, 190);
+            ctx.lineTo(472, 190);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Date and Order
+            ctx.textAlign = 'left';
+            ctx.font = '14px Courier New, monospace';
+            ctx.fillText('Date: 2026-02-23  14:17', 40, 230);
+            ctx.fillText('Order: #00382', 40, 255);
+
+            // Dashed line
+            ctx.strokeStyle = '#666';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(40, 285);
+            ctx.lineTo(472, 285);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Items header
+            ctx.font = 'bold 14px Courier New, monospace';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'left';
+            ctx.fillText('Item', 40, 320);
+            ctx.textAlign = 'right';
+            ctx.fillText('Price', 472, 320);
+
+            // Items
+            ctx.font = '14px Courier New, monospace';
+            ctx.textAlign = 'left';
+            const items = [
+                ['Vertex Shader', '$4.20'],
+                ['Fragment Shader', '$3.50'],
+                ['Normal Map', '$2.80'],
+                ['UV Unwrap', '$1.50'],
+                ['Cloth Simulation', '$6.00']
+            ];
+
+            let y = 350;
+            items.forEach(([item, price]) => {
+                ctx.textAlign = 'left';
+                ctx.fillText(item, 40, y);
+                ctx.textAlign = 'right';
+                ctx.fillText(price, 472, y);
+                y += 30;
+            });
+
+            // Dashed line
+            ctx.strokeStyle = '#666';
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(40, y + 10);
+            ctx.lineTo(472, y + 10);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Subtotal
+            y += 50;
+            ctx.textAlign = 'left';
+            ctx.font = '14px Courier New, monospace';
+            ctx.fillText('Subtotal', 40, y);
+            ctx.textAlign = 'right';
+            ctx.fillText('$18.00', 472, y);
+
+            // Tax
+            y += 30;
+            ctx.textAlign = 'left';
+            ctx.fillText('Tax (8%)', 40, y);
+            ctx.textAlign = 'right';
+            ctx.fillText('$1.44', 472, y);
+
+            // Thick line
+            y += 40;
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(40, y);
+            ctx.lineTo(472, y);
+            ctx.stroke();
+
+            // Total
+            y += 40;
+            ctx.textAlign = 'left';
+            ctx.font = 'bold 18px Courier New, monospace';
+            ctx.fillText('TOTAL', 40, y);
+            ctx.textAlign = 'right';
+            ctx.fillText('$19.44', 472, y);
+
+            // Thank you
+            y += 120;
+            ctx.font = 'bold 16px Courier New, monospace';
+            ctx.fillText('Thank you for visiting!', 256, y);
+
+            // URL
+            y += 35;
+            ctx.font = '12px Courier New, monospace';
+            ctx.fillStyle = '#666';
+            ctx.fillText('http://github.com/flornkm', 256, y);
+
+            // Create WebGL texture
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureCanvas);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+            return texture;
+        }
+
+        const receiptTexture = createReceiptTexture();
+
+        // ============================================
+        // SHADER PROGRAMS
+        // ============================================
+        const vertexShaderSource = `
+        attribute vec3 aPosition;
+        attribute vec3 aNormal;
+        attribute vec2 aTexCoord;
+        
+        uniform mat4 uModelMatrix;
+        uniform mat4 uViewMatrix;
+        uniform mat4 uProjectionMatrix;
+        uniform mat3 uNormalMatrix;
+        
+        varying vec3 vNormal;
+        varying vec2 vTexCoord;
+        varying vec3 vWorldPos;
+        
+        void main() {
+            vec4 worldPos = uModelMatrix * vec4(aPosition, 1.0);
+            vWorldPos = worldPos.xyz;
+            vNormal = uNormalMatrix * aNormal;
+            vTexCoord = aTexCoord;
+            gl_Position = uProjectionMatrix * uViewMatrix * worldPos;
+        }
+    `;
+
+        const fragmentShaderSource = `
+        precision mediump float;
+        
+        varying vec3 vNormal;
+        varying vec2 vTexCoord;
+        varying vec3 vWorldPos;
+        
+        uniform sampler2D uTexture;
+        uniform vec3 uAmbientColor;
+        uniform vec3 uLightDir;
+        uniform vec3 uLightColor;
+        uniform vec3 uCameraPos;
+        
+        void main() {
+            vec3 normal = normalize(vNormal);
+            vec3 lightDir = normalize(uLightDir);
+            vec3 viewDir = normalize(uCameraPos - vWorldPos);
+            
+            // Base texture color
+            vec4 texColor = texture2D(uTexture, vTexCoord);
+            
+            // Ambient
+            vec3 ambient = uAmbientColor * texColor.rgb;
+            
+            // Diffuse
+            float diff = max(dot(normal, lightDir), 0.0);
+            vec3 diffuse = diff * uLightColor * texColor.rgb;
+            
+            // Back face lighting (for double-sided)
+            float backDiff = max(dot(-normal, lightDir), 0.0);
+            vec3 backDiffuse = backDiff * uLightColor * texColor.rgb * 0.4;
+            
+            // Combine based on which side we're facing
+            float facing = dot(normal, viewDir) > 0.0 ? 1.0 : 0.0;
+            vec3 finalColor = mix(backDiffuse, ambient + diffuse, facing);
+            
+            // Paper roughness simulation
+            float roughness = 0.3;
+            vec3 halfDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(normal, halfDir), 0.0), 8.0) * 0.1 * roughness;
+            
+            // Gamma correction
+            finalColor = pow(finalColor + spec, vec3(1.0 / 2.2));
+            
+            gl_FragColor = vec4(finalColor, texColor.a);
+        }
+    `;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        function createProgram(gl, vertexShader, fragmentShader) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error('Program link error:', gl.getProgramInfoLog(program));
+                return null;
+            }
+            return program;
+        }
+
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        const program = createProgram(gl, vertexShader, fragmentShader);
+
+        // Get attribute and uniform locations
+        const attribs = {
+            position: gl.getAttribLocation(program, 'aPosition'),
+            normal: gl.getAttribLocation(program, 'aNormal'),
+            texCoord: gl.getAttribLocation(program, 'aTexCoord')
+        };
+
+        const uniforms = {
+            modelMatrix: gl.getUniformLocation(program, 'uModelMatrix'),
+            viewMatrix: gl.getUniformLocation(program, 'uViewMatrix'),
+            projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix'),
+            normalMatrix: gl.getUniformLocation(program, 'uNormalMatrix'),
+            texture: gl.getUniformLocation(program, 'uTexture'),
+            ambientColor: gl.getUniformLocation(program, 'uAmbientColor'),
+            lightDir: gl.getUniformLocation(program, 'uLightDir'),
+            lightColor: gl.getUniformLocation(program, 'uLightColor'),
+            cameraPos: gl.getUniformLocation(program, 'uCameraPos')
+        };
+
+        // ============================================
+        // PARTICLE SYSTEM (VERLET INTEGRATION)
+        // ============================================
+        const RECEIPT_WIDTH = 3.0;
+        const RECEIPT_HEIGHT = 6.0;
+        const SEGMENTS_X = 25;
+        const SEGMENTS_Y = 50;
+        const PARTICLE_COUNT = (SEGMENTS_X + 1) * (SEGMENTS_Y + 1);
+
+        class Particle {
+            constructor(x, y, z, pinned = false) {
+                this.position = [x, y, z];
+                this.previousPosition = [x, y, z];
+                this.acceleration = [0, 0, 0];
+                this.pinned = pinned;
+                this.mass = 1.0;
+            }
+
+            applyForce(fx, fy, fz) {
+                if (this.pinned) return;
+                this.acceleration[0] += fx / this.mass;
+                this.acceleration[1] += fy / this.mass;
+                this.acceleration[2] += fz / this.mass;
+            }
+
+            integrate(dt) {
+                if (this.pinned) return;
+
+                const vx = (this.position[0] - this.previousPosition[0]) * 0.98;
+                const vy = (this.position[1] - this.previousPosition[1]) * 0.98;
+                const vz = (this.position[2] - this.previousPosition[2]) * 0.98;
+
+                this.previousPosition = [...this.position];
+
+                this.position[0] += vx + this.acceleration[0] * dt * dt;
+                this.position[1] += vy + this.acceleration[1] * dt * dt;
+                this.position[2] += vz + this.acceleration[2] * dt * dt;
+
+                this.acceleration = [0, 0, 0];
+            }
+        }
+
+        class Constraint {
+            constructor(p1, p2, stiffness = 1.0) {
+                this.p1 = p1;
+                this.p2 = p2;
+                const dx = p2.position[0] - p1.position[0];
+                const dy = p2.position[1] - p1.position[1];
+                const dz = p2.position[2] - p1.position[2];
+                this.restLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                this.stiffness = stiffness;
+            }
+
+            satisfy() {
+                const dx = this.p2.position[0] - this.p1.position[0];
+                const dy = this.p2.position[1] - this.p1.position[1];
+                const dz = this.p2.position[2] - this.p1.position[2];
+
+                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (distance === 0) return;
+
+                const diff = (distance - this.restLength) / distance;
+
+                const offsetX = dx * diff * 0.5 * this.stiffness;
+                const offsetY = dy * diff * 0.5 * this.stiffness;
+                const offsetZ = dz * diff * 0.5 * this.stiffness;
+
+                if (!this.p1.pinned) {
+                    this.p1.position[0] += offsetX;
+                    this.p1.position[1] += offsetY;
+                    this.p1.position[2] += offsetZ;
+                }
+                if (!this.p2.pinned) {
+                    this.p2.position[0] -= offsetX;
+                    this.p2.position[1] -= offsetY;
+                    this.p2.position[2] -= offsetZ;
+                }
+            }
+        }
+
+        // Create particles
+        const particles = [];
+        const constraints = [];
+
+        function initCloth() {
+            particles.length = 0;
+            constraints.length = 0;
+
+            const startX = -RECEIPT_WIDTH / 2;
+            const startY = RECEIPT_HEIGHT / 2;
+            const stepX = RECEIPT_WIDTH / SEGMENTS_X;
+            const stepY = -RECEIPT_HEIGHT / SEGMENTS_Y;
+
+            // Create particles
+            for (let y = 0; y <= SEGMENTS_Y; y++) {
+                for (let x = 0; x <= SEGMENTS_X; x++) {
+                    const px = startX + x * stepX;
+                    const py = startY + y * stepY;
+                    const pz = 0;
+
+                    // Pin the top row
+                    const pinned = (y === 0 && x % 3 === 0);
+                    particles.push(new Particle(px, py, pz, pinned));
+                }
+            }
+
+            // Create structural constraints (horizontal and vertical)
+            for (let y = 0; y <= SEGMENTS_Y; y++) {
+                for (let x = 0; x <= SEGMENTS_X; x++) {
+                    const idx = y * (SEGMENTS_X + 1) + x;
+
+                    // Horizontal
+                    if (x < SEGMENTS_X) {
+                        constraints.push(new Constraint(particles[idx], particles[idx + 1], 1.0));
+                    }
+
+                    // Vertical
+                    if (y < SEGMENTS_Y) {
+                        constraints.push(new Constraint(particles[idx], particles[idx + SEGMENTS_X + 1], 1.0));
+                    }
+
+                    // Shear constraints (diagonals) for stiffness
+                    if (x < SEGMENTS_X && y < SEGMENTS_Y) {
+                        constraints.push(new Constraint(particles[idx], particles[idx + SEGMENTS_X + 2], 0.5));
+                        constraints.push(new Constraint(particles[idx + 1], particles[idx + SEGMENTS_X + 1], 0.5));
+                    }
+
+                    // Bending constraints (skip one)
+                    if (x < SEGMENTS_X - 1) {
+                        constraints.push(new Constraint(particles[idx], particles[idx + 2], 0.3));
+                    }
+                    if (y < SEGMENTS_Y - 1) {
+                        constraints.push(new Constraint(particles[idx], particles[idx + (SEGMENTS_X + 1) * 2], 0.3));
+                    }
+                }
+            }
+        }
+
+        initCloth();
+
+        // ============================================
+        // PHYSICS SIMULATION
+        // ============================================
+        const GRAVITY = -9.8;
+        const CONSTRAINT_ITERATIONS = 15;
+
+        function simulateCloth(dt) {
+            // Apply gravity
+            for (const particle of particles) {
+                particle.applyForce(0, GRAVITY, 0);
+            }
+
+            // Integrate
+            for (const particle of particles) {
+                particle.integrate(dt);
+            }
+
+            // Satisfy constraints
+            for (let i = 0; i < CONSTRAINT_ITERATIONS; i++) {
+                for (const constraint of constraints) {
+                    constraint.satisfy();
+                }
+            }
+        }
+
+        // ============================================
+        // MESH GENERATION
+        // ============================================
+        const mesh = {
+            vertexCount: 0,
+            indices: [],
+            vertexBuffer: null,
+            normalBuffer: null,
+            texCoordBuffer: null,
+            indexBuffer: null
+        };
+
+        function generateMesh() {
+            const positions = [];
+            const normals = [];
+            const texCoords = [];
+
+            for (let y = 0; y <= SEGMENTS_Y; y++) {
+                for (let x = 0; x <= SEGMENTS_X; x++) {
+                    const idx = y * (SEGMENTS_X + 1) + x;
+                    const p = particles[idx];
+
+                    positions.push(p.position[0], p.position[1], p.position[2]);
+                    normals.push(0, 0, 1);
+                    texCoords.push(x / SEGMENTS_X, y / SEGMENTS_Y);
+                }
+            }
+
+            const indices = [];
+            for (let y = 0; y < SEGMENTS_Y; y++) {
+                for (let x = 0; x < SEGMENTS_X; x++) {
+                    const a = y * (SEGMENTS_X + 1) + x;
+                    const b = a + 1;
+                    const c = a + SEGMENTS_X + 1;
+                    const d = c + 1;
+
+                    // Front face
+                    indices.push(a, b, c);
+                    indices.push(b, d, c);
+
+                    // Back face (flipped)
+                    indices.push(a, c, b);
+                    indices.push(b, c, d);
+                }
+            }
+
+            // Create buffers
+            mesh.vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
+
+            mesh.normalBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.DYNAMIC_DRAW);
+
+            mesh.texCoordBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.texCoordBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
+
+            mesh.indexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+            mesh.indexCount = indices.length;
+        }
+
+        function updateMesh() {
+            const positions = [];
+            const normals = [];
+
+            for (let y = 0; y <= SEGMENTS_Y; y++) {
+                for (let x = 0; x <= SEGMENTS_X; x++) {
+                    const idx = y * (SEGMENTS_X + 1) + x;
+                    const p = particles[idx];
+                    positions.push(p.position[0], p.position[1], p.position[2]);
+
+                    // Calculate normal from neighbors
+                    let nx = 0, ny = 0, nz = 0;
+                    const neighbors = [];
+
+                    if (x > 0) neighbors.push(particles[idx - 1]);
+                    if (x < SEGMENTS_X) neighbors.push(particles[idx + 1]);
+                    if (y > 0) neighbors.push(particles[idx - SEGMENTS_X - 1]);
+                    if (y < SEGMENTS_Y) neighbors.push(particles[idx + SEGMENTS_X + 1]);
+
+                    for (let i = 0; i < neighbors.length; i++) {
+                        for (let j = i + 1; j < neighbors.length; j++) {
+                            const n1 = neighbors[i].position;
+                            const n2 = neighbors[j].position;
+                            const p = particles[idx].position;
+
+                            const ex = n1[0] - p[0];
+                            const ey = n1[1] - p[1];
+                            const ez = n1[2] - p[2];
+                            const fx = n2[0] - p[0];
+                            const fy = n2[1] - p[1];
+                            const fz = n2[2] - p[2];
+
+                            nx += ey * fz - ez * fy;
+                            ny += ez * fx - ex * fz;
+                            nz += ex * fy - ey * fx;
+                        }
+                    }
+
+                    const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+                    if (len > 0) {
+                        normals.push(nx / len, ny / len, nz / len);
+                    } else {
+                        normals.push(0, 0, 1);
+                    }
+                }
+            }
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(positions));
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(normals));
+        }
+
+        generateMesh();
+
+        // ============================================
+        // INTERACTION
+        // ============================================
+        let grabbedParticle = null;
+        let grabIndicator = null;
+        const raycaster = { plane: null, hitPoint: null };
+
+        function getCamera() {
+            return {
+                eye: [0, 2, 12],
+                target: [0, -2, 0],
+                up: [0, 1, 0],
+                fov: 45 * Math.PI / 180
+            };
+        }
+
+        function projectToWorld(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+            const camera = getCamera();
+            const aspect = rect.width / rect.height;
+            const near = 0.1;
+            const far = 100;
+
+            // View direction
+            const eye = camera.eye;
+            const target = camera.target;
+            const dz = target[2] - eye[2];
+            const dy = target[1] - eye[1];
+            const dx = target[0] - eye[0];
+            const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            const viewDir = [dx / len, dy / len, dz / len];
+
+            // Right vector
+            const up = camera.up;
+            const right = [
+                up[1] * viewDir[2] - up[2] * viewDir[1],
+                up[2] * viewDir[0] - up[0] * viewDir[2],
+                up[0] * viewDir[1] - up[1] * viewDir[0]
+            ];
+            const rLen = Math.sqrt(right[0] * right[0] + right[1] * right[1] + right[2] * right[2]);
+            right[0] /= rLen; right[1] /= rLen; right[2] /= rLen;
+
+            // Up vector
+            const upVec = [
+                viewDir[1] * right[2] - viewDir[2] * right[1],
+                viewDir[2] * right[0] - viewDir[0] * right[2],
+                viewDir[0] * right[1] - viewDir[1] * right[0]
+            ];
+
+            // World position
+            const tanFov = Math.tan(camera.fov / 2);
+            const worldX = x * aspect * tanFov * 15 + eye[0];
+            const worldY = y * tanFov * 15 + eye[1];
+            const worldZ = eye[2] - 15;
+
+            return [worldX, worldY, worldZ];
+        }
+
+        function findClosestParticle(worldX, worldY, worldZ) {
+            let closest = null;
+            let minDist = Infinity;
+
+            for (const particle of particles) {
+                if (particle.pinned) continue;
+
+                const dx = particle.position[0] - worldX;
+                const dy = particle.position[1] - worldY;
+                const dz = particle.position[2] - worldZ;
+                const dist = dx * dx + dy * dy + dz * dz;
+
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = particle;
+                }
+            }
+
+            return closest;
+        }
+
+        function onPointerDown(e) {
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+
+            const worldPos = projectToWorld(clientX, clientY);
+            grabbedParticle = findClosestParticle(worldPos[0], worldPos[1], worldPos[2]);
+
+            if (grabbedParticle) {
+                createGrabIndicator();
+                updateGrabIndicator(worldPos);
+            }
+        }
+
+        function onPointerMove(e) {
+            if (!grabbedParticle) return;
+
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+
+            const worldPos = projectToWorld(clientX, clientY);
+            grabbedParticle.position[0] = worldPos[0];
+            grabbedParticle.position[1] = worldPos[1];
+            grabbedParticle.position[2] = worldPos[2];
+            grabbedParticle.previousPosition = [...grabbedParticle.position];
+
+            updateGrabIndicator(worldPos);
+        }
+
+        function onPointerUp() {
+            grabbedParticle = null;
+            removeGrabIndicator();
+        }
+
+        function createGrabIndicator() {
+            grabIndicator = document.createElement('div');
+            grabIndicator.style.cssText = `
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(100, 150, 255, 0.8);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(100, 150, 255, 0.2) 0%, transparent 70%);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        `;
+            document.body.appendChild(grabIndicator);
+        }
+
+        function updateGrabIndicator(worldPos) {
+            if (!grabIndicator) return;
+
+            const camera = getCamera();
+            const rect = canvas.getBoundingClientRect();
+            const aspect = rect.width / rect.height;
+            const tanFov = Math.tan(camera.fov / 2);
+
+            // Simple projection
+            const relX = worldPos[0] - camera.eye[0];
+            const relY = worldPos[1] - camera.eye[1];
+            const relZ = worldPos[2] - camera.eye[2];
+
+            const screenX = (relX / (relZ * tanFov * aspect)) * 0.5 + 0.5;
+            const screenY = (-relY / (relZ * tanFov)) * 0.5 + 0.5;
+
+            grabIndicator.style.left = (screenX * rect.width + rect.left) + 'px';
+            grabIndicator.style.top = (screenY * rect.height + rect.top) + 'px';
+        }
+
+        function removeGrabIndicator() {
+            if (grabIndicator) {
+                grabIndicator.remove();
+                grabIndicator = null;
+            }
+        }
+
+        canvas.addEventListener('mousedown', onPointerDown);
+        canvas.addEventListener('mousemove', onPointerMove);
+        canvas.addEventListener('mouseup', onPointerUp);
+        canvas.addEventListener('mouseleave', onPointerUp);
+
+        canvas.addEventListener('touchstart', onPointerDown, { passive: true });
+        canvas.addEventListener('touchmove', onPointerMove, { passive: true });
+        canvas.addEventListener('touchend', onPointerUp);
+
+        // ============================================
+        // MATRIX UTILITIES
+        // ============================================
+        function mat4Perspective(fov, aspect, near, far) {
+            const f = 1.0 / Math.tan(fov / 2);
+            const nf = 1 / (near - far);
+            return new Float32Array([
+                f / aspect, 0, 0, 0,
+                0, f, 0, 0,
+                0, 0, (far + near) * nf, -1,
+                0, 0, 2 * far * near * nf, 0
+            ]);
+        }
+
+        function mat4LookAt(eye, target, up) {
+            const zx = eye[0] - target[0];
+            const zy = eye[1] - target[1];
+            const zz = eye[2] - target[2];
+            let len = Math.sqrt(zx * zx + zy * zy + zz * zz);
+            const z = [zx / len, zy / len, zz / len];
+
+            const xx = up[1] * z[2] - up[2] * z[1];
+            const xy = up[2] * z[0] - up[0] * z[2];
+            const xz = up[0] * z[1] - up[1] * z[0];
+            len = Math.sqrt(xx * xx + xy * xy + xz * xz);
+            const x = [xx / len, xy / len, xz / len];
+
+            const y = [
+                z[1] * x[2] - z[2] * x[1],
+                z[2] * x[0] - z[0] * x[2],
+                z[0] * x[1] - z[1] * x[0]
+            ];
+
+            return new Float32Array([
+                x[0], y[0], z[0], 0,
+                x[1], y[1], z[1], 0,
+                x[2], y[2], z[2], 0,
+                -(x[0] * eye[0] + x[1] * eye[1] + x[2] * eye[2]),
+                -(y[0] * eye[0] + y[1] * eye[1] + y[2] * eye[2]),
+                -(z[0] * eye[0] + z[1] * eye[1] + z[2] * eye[2]),
+                1
+            ]);
+        }
+
+        function mat4Identity() {
+            return new Float32Array([
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            ]);
+        }
+
+        function mat3FromMat4(m) {
+            return new Float32Array([
+                m[0], m[1], m[2],
+                m[4], m[5], m[6],
+                m[8], m[9], m[10]
+            ]);
+        }
+
+        function mat3Inverse(m) {
+            const a00 = m[0], a01 = m[1], a02 = m[2];
+            const a10 = m[3], a11 = m[4], a12 = m[5];
+            const a20 = m[6], a21 = m[7], a22 = m[8];
+
+            const b01 = a22 * a11 - a12 * a21;
+            const b11 = -a22 * a10 + a12 * a20;
+            const b21 = a21 * a10 - a11 * a20;
+
+            let det = a00 * b01 + a01 * b11 + a02 * b21;
+            if (!det) return m;
+            det = 1.0 / det;
+
+            return new Float32Array([
+                b01 * det,
+                (-a22 * a01 + a02 * a21) * det,
+                (a12 * a01 - a02 * a11) * det,
+                b11 * det,
+                (a22 * a00 - a02 * a20) * det,
+                (-a12 * a00 + a02 * a10) * det,
+                b21 * det,
+                (-a21 * a00 + a01 * a20) * det,
+                (a11 * a00 - a01 * a10) * det
+            ]);
+        }
+
+        function mat3Transpose(m) {
+            return new Float32Array([
+                m[0], m[3], m[6],
+                m[1], m[4], m[7],
+                m[2], m[5], m[8]
+            ]);
+        }
+
+        function mat3NormalMatrix(m) {
+            return mat3Transpose(mat3Inverse(m));
+        }
+
+        // ============================================
+        // RENDERING
+        // ============================================
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        function render() {
+            const camera = getCamera();
+            const aspect = canvas.width / canvas.height;
+
+            gl.clearColor(0.898, 0.898, 0.898, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
+            gl.enable(gl.CULL_FACE);
+            gl.cullFace(gl.BACK);
+
+            gl.useProgram(program);
+
+            // Set uniforms
+            const projectionMatrix = mat4Perspective(camera.fov, aspect, 0.1, 100);
+            const viewMatrix = mat4LookAt(camera.eye, camera.target, camera.up);
+            const modelMatrix = mat4Identity();
+            const normalMatrix = mat3NormalMatrix(mat3FromMat4(modelMatrix));
+
+            gl.uniformMatrix4fv(uniforms.projectionMatrix, false, projectionMatrix);
+            gl.uniformMatrix4fv(uniforms.viewMatrix, false, viewMatrix);
+            gl.uniformMatrix4fv(uniforms.modelMatrix, false, modelMatrix);
+            gl.uniformMatrix3fv(uniforms.normalMatrix, false, normalMatrix);
+
+            // Lighting
+            gl.uniform3fv(uniforms.ambientColor, [0.4, 0.4, 0.4]);
+            gl.uniform3fv(uniforms.lightDir, [0.5, 1.0, 1.0]);
+            gl.uniform3fv(uniforms.lightColor, [1.0, 0.98, 0.95]);
+            gl.uniform3fv(uniforms.cameraPos, camera.eye);
+
+            // Texture
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, receiptTexture);
+            gl.uniform1i(uniforms.texture, 0);
+
+            // Bind buffers
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
+            gl.enableVertexAttribArray(attribs.position);
+            gl.vertexAttribPointer(attribs.position, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
+            gl.enableVertexAttribArray(attribs.normal);
+            gl.vertexAttribPointer(attribs.normal, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.texCoordBuffer);
+            gl.enableVertexAttribArray(attribs.texCoord);
+            gl.vertexAttribPointer(attribs.texCoord, 2, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
+            gl.drawElements(gl.TRIANGLES, mesh.indexCount, gl.UNSIGNED_SHORT, 0);
+        }
+
+        // ============================================
+        // ANIMATION LOOP
+        // ============================================
+        let lastTime = 0;
+
+        function animate(time) {
+            const dt = Math.min((time - lastTime) / 1000, 0.033);
+            lastTime = time;
+
+            // Run physics simulation
+            simulateCloth(dt);
+
+            // Update mesh vertices
+            updateMesh();
+
+            // Render
+            render();
+
+            requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
+    </script>
+</body>
+
+</html>

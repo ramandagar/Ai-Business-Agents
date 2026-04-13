@@ -1,0 +1,99 @@
+{
+  "businessName": "CWS Technology",
+  "tagline": "We build fast, beautiful web products for startups and businesses.",
+  "currency": "INR",
+  "rateCard": [
+    { "role": "Frontend Developer", "rate": 1500, "unit": "hour" },
+    { "role": "Backend Developer", "rate": 2000, "unit": "hour" },
+    { "role": "Full Stack Developer", "rate": 1800, "unit": "hour" },
+    { "role": "UI/UX Designer", "rate": 1000, "unit": "hour" },
+    { "role": "Project Manager", "rate": 1200, "unit": "hour" }
+  ],
+  "pastProjects": [
+    {
+      "name": "E-commerce for Fashion Brand",
+      "cost": 180000,
+      "timeline": "8 weeks",
+      "scope": "Custom Shopify-style store with complex filtering and payment integration",
+      "impact": "Managed 50k+ daily users"
+    },
+    {
+      "name": "Real Estate Dashboard",
+      "cost": 250000,
+      "timeline": "10 weeks",
+      "scope": "Admin portal for managing 500+ properties with automated reporting",
+      "impact": "Automated 80% of backend tasks"
+    },
+    {
+      "name": "Fintech Mobile App",
+      "cost": 500000,
+      "timeline": "16 weeks",
+      "scope": "iOS and Android apps with secure KYC and wallet features",
+      "impact": "Processed 1 Cr+ in transactions in first month"
+    }
+  ],
+  "services": [
+    {
+      "name": "Landing Page",
+      "tags": ["landing page", "single page", "marketing", "product page", "one page"],
+      "minPrice": 15000, "maxPrice": 35000, "timeline": "1–2 weeks",
+      "includes": ["Design", "Development", "Mobile responsive", "Contact form", "Basic SEO"]
+    },
+    {
+      "name": "Business Website",
+      "tags": ["website", "company", "business", "corporate", "multi page", "pages"],
+      "minPrice": 35000, "maxPrice": 80000, "timeline": "2–4 weeks",
+      "includes": ["Up to 8 pages", "CMS", "Mobile responsive", "SEO", "3 months support"]
+    },
+    {
+      "name": "E-commerce Store",
+      "tags": ["ecommerce", "shop", "store", "sell", "products", "payment", "online store"],
+      "minPrice": 80000, "maxPrice": 200000, "timeline": "4–8 weeks",
+      "includes": ["Product catalog", "Cart & checkout", "Payment gateway", "Admin dashboard", "6 months support"]
+    },
+    {
+      "name": "Custom Web Application",
+      "tags": ["web app", "saas", "dashboard", "portal", "application", "react", "custom", "full stack"],
+      "minPrice": 150000, "maxPrice": 500000, "timeline": "6–16 weeks",
+      "includes": ["Custom design", "Frontend + Backend", "Database", "Auth", "Admin panel", "API", "Deployment"]
+    },
+    {
+      "name": "Mobile App",
+      "tags": ["mobile", "ios", "android", "app", "react native", "smartphone"],
+      "minPrice": 200000, "maxPrice": 600000, "timeline": "8–20 weeks",
+      "includes": ["iOS + Android", "UI/UX design", "Backend API", "App Store submission"]
+    },
+    {
+      "name": "UI/UX Design",
+      "tags": ["design", "ui", "ux", "figma", "wireframe", "prototype", "mockup"],
+      "minPrice": 20000, "maxPrice": 80000, "timeline": "1–3 weeks",
+      "includes": ["Wireframes", "High-fidelity designs", "Figma prototype", "Design handoff"]
+    },
+    {
+      "name": "API Integration",
+      "tags": ["api", "integration", "whatsapp", "payment", "third party", "connect", "webhook"],
+      "minPrice": 10000, "maxPrice": 40000, "timeline": "3–7 days",
+      "includes": ["API setup", "Error handling", "Testing", "Documentation"]
+    },
+    {
+      "name": "Monthly Maintenance",
+      "tags": ["maintenance", "support", "monthly", "updates", "bug fix"],
+      "minPrice": 5000, "maxPrice": 15000, "timeline": "Ongoing",
+      "includes": ["Monthly updates", "Bug fixes", "Security patches", "Uptime monitoring"]
+    }
+  ],
+  "policies": {
+    "payment": "50% advance to start, 50% on delivery",
+    "revisions": "3 free revision rounds included in all projects",
+    "support": "3 months free support after delivery",
+    "ownership": "Full source code ownership after final payment"
+  },
+  "calendar": {
+    "meetingDuration": 30,
+    "meetingTitle": "Discovery Call — CWS Technology",
+    "workingHours": { "start": 10, "end": 18 },
+    "workingDays": [1, 2, 3, 4, 5],
+    "timezone": "Asia/Kolkata",
+    "bufferMinutes": 30
+  }
+}

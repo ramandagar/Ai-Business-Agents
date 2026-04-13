@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agents — Architecture & Flow</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0e0; }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: #1a1a2e; border-bottom: 1px solid #2d2d44;
+    display: flex; align-items: center; gap: 24px; padding: 14px 32px;
+  }
+  nav .logo { font-weight: 700; font-size: 18px; color: #7c6cff; }
+  nav a {
+    color: #8888aa; text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 6px 14px; border-radius: 6px; transition: all 0.2s;
+  }
+  nav a:hover, nav a.active { color: #fff; background: #2d2d44; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 80px 24px 60px; }
+
+  h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+  h2 { font-size: 24px; font-weight: 700; margin: 48px 0 16px; color: #fff; border-bottom: 2px solid #7c6cff; display: inline-block; padding-bottom: 4px; }
+  h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; color: #c0c0e0; }
+  p { line-height: 1.7; color: #b0b0c8; margin-bottom: 12px; }
+  ul { margin: 8px 0 16px 24px; color: #b0b0c8; }
+  li { margin-bottom: 6px; line-height: 1.6; }
+
+  .hero {
+    text-align: center; padding: 60px 0 40px;
+  }
+  .hero h1 { font-size: 40px; margin-bottom: 12px; }
+  .hero p { font-size: 18px; max-width: 700px; margin: 0 auto; }
+  .badge { display: inline-block; background: #7c6cff22; color: #7c6cff; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin: 4px; }
+  .badge.green { background: #22c55e22; color: #22c55e; }
+  .badge.blue { background: #3b82f622; color: #3b82f6; }
+  .badge.orange { background: #f59e0b22; color: #f59e0b; }
+  .badge.red { background: #ef444422; color: #ef4444; }
+
+  .section { margin-bottom: 48px; }
+  .card {
+    background: #1a1a2e; border: 1px solid #2d2d44; border-radius: 12px;
+    padding: 24px; margin: 16px 0;
+  }
+  .card-title { font-size: 16px; font-weight: 600; color: #7c6cff; margin-bottom: 12px; }
+
+  /* ===== FLOW DIAGRAM STYLES ===== */
+  .flow {
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+    padding: 24px 0; overflow-x: auto;
+  }
+  .flow-row {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .flow-row.vertical { flex-direction: column; gap: 0; }
+
+  .flow-box {
+    background: #1a1a2e; border: 1px solid #3a3a55; border-radius: 10px;
+    padding: 12px 20px; text-align: center; min-width: 140px; max-width: 220px;
+    position: relative;
+  }
+  .flow-box.highlight { border-color: #7c6cff; background: #7c6cff11; }
+  .flow-box.green { border-color: #22c55e; background: #22c55e11; }
+  .flow-box.blue { border-color: #3b82f6; background: #3b82f611; }
+  .flow-box.orange { border-color: #f59e0b; background: #f59e0b11; }
+  .flow-box.red { border-color: #ef4444; background: #ef444411; }
+  .flow-box .title { font-size: 13px; font-weight: 600; color: #fff; }
+  .flow-box .sub { font-size: 11px; color: #8888aa; margin-top: 2px; }
+
+  .arrow-down {
+    width: 2px; height: 28px; background: #3a3a55; position: relative;
+  }
+  .arrow-down::after {
+    content: ''; position: absolute; bottom: -4px; left: -4px;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid #3a3a55;
+  }
+  .arrow-down.purple { background: #7c6cff; }
+  .arrow-down.purple::after { border-top-color: #7c6cff; }
+
+  .arrow-right {
+    display: flex; align-items: center; color: #3a3a55; font-size: 20px;
+    padding: 0 4px;
+  }
+
+  .branch {
+    display: flex; gap: 16px; align-items: flex-start; justify-content: center;
+    width: 100%; margin: 8px 0;
+  }
+  .branch-col {
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+  }
+  .branch-label {
+    font-size: 11px; color: #8888aa; background: #2d2d44;
+    padding: 3px 10px; border-radius: 10px; margin-bottom: 8px;
+  }
+
+  /* ===== FILE TREE ===== */
+  .file-tree {
+    background: #1a1a2e; border: 1px solid #2d2d44; border-radius: 10px;
+    padding: 20px 24px; font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px; line-height: 1.8;
+  }
+  .file-tree .dir { color: #7c6cff; font-weight: 600; }
+  .file-tree .file { color: #b0b0c8; }
+  .file-tree .desc { color: #666680; margin-left: 12px; }
+
+  /* ===== API TABLE ===== */
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0;
+    font-size: 14px;
+  }
+  th {
+    background: #1a1a2e; color: #7c6cff; text-align: left;
+    padding: 10px 14px; border-bottom: 2px solid #2d2d44;
+  }
+  td {
+    padding: 10px 14px; border-bottom: 1px solid #2d2d44; color: #b0b0c8;
+  }
+  code {
+    background: #2d2d44; padding: 2px 8px; border-radius: 4px;
+    font-size: 13px; color: #c0c0e0;
+  }
+
+  .two-col {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+  .divider {
+    border: none; border-top: 1px solid #2d2d44; margin: 64px 0;
+  }
+
+  .tooltip { position: relative; cursor: help; border-bottom: 1px dashed #7c6cff; }
+
+  .agent-box {
+    border-radius: 12px; padding: 16px; margin: 8px 0;
+  }
+  .agent-box.purple { background: #7c6cff11; border: 1px solid #7c6cff44; }
+  .agent-box.green { background: #22c55e11; border: 1px solid #22c55e44; }
+  .agent-box.blue { background: #3b82f611; border: 1px solid #3b82f644; }
+  .agent-box.orange { background: #f59e0b11; border: 1px solid #f59e0b44; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">AI Agents</div>
+  <a href="#blog-agent" class="active">Auto Blog Agent</a>
+  <a href="#sales-agent">Sales Estimation Agent</a>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- SECTION 1: AUTO BLOG POSTING AGENT                           -->
+<!-- ============================================================ -->
+
+<div class="hero">
+  <div>
+    <span class="badge">LangGraph</span>
+    <span class="badge green">Google Gemini</span>
+    <span class="badge blue">RAG</span>
+    <span class="badge orange">LangChain</span>
+  </div>
+  <h1 style="margin-top:16px;">Auto Blog Posting Agent</h1>
+  <p>AI-powered blog generation pipeline that crawls your website, researches topics, writes SEO-optimized content, generates images, and auto-publishes on a schedule.</p>
+</div>
+
+<!-- HIGH-LEVEL ARCHITECTURE -->
+<h2>High-Level Architecture</h2>
+
+<div class="flow" id="blog-agent">
+  <div class="flow-row">
+    <div class="flow-box highlight">
+      <div class="title">User / Dashboard</div>
+      <div class="sub">Registers site, triggers generation</div>
+    </div>
+    <div class="arrow-right">→</div>
+    <div class="flow-box blue">
+      <div class="title">Express API Server</div>
+      <div class="sub">REST endpoints + Cron scheduler</div>
+    </div>
+    <div class="arrow-right">→</div>
+    <div class="flow-box green">
+      <div class="title">LangGraph Pipeline</div>
+      <div class="sub">6-node DAG with conditional edges</div>
+    </div>
+    <div class="arrow-right">→</div>
+    <div class="flow-box orange">
+      <div class="title">Google Gemini AI</div>
+      <div class="sub">Content + Embeddings + Images</div>
+    </div>
+  </div>
+</div>
+
+<p>The system has 4 layers: <strong>API Layer</strong> (Express), <strong>Orchestration Layer</strong> (LangGraph), <strong>AI Layer</strong> (Gemini), and <strong>Persistence Layer</strong> (file-based JSON storage + vector embeddings).</p>
+
+<!-- FILE STRUCTURE -->
+<h2>Project Structure</h2>
+
+<div class="file-tree">
+<span class="dir">src/</span>
+├── <span class="file">server.ts</span>             <span class="desc">← Express API + cron + graceful shutdown</span>
+├── <span class="dir">engine/</span>
+│   ├── <span class="file">graph.ts</span>           <span class="desc">← LangGraph pipeline (6 nodes, conditional edges)</span>
+│   ├── <span class="file">generator.ts</span>       <span class="desc">← System prompt builder + Markdown→HTML</span>
+│   ├── <span class="file">topic-researcher.ts</span> <span class="desc">← Two-mode topic discovery (deepen / white-space)</span>
+│   ├── <span class="file">seo-optimizer.ts</span>   <span class="desc">← SEO scoring + AI optimization</span>
+│   └── <span class="file">image-handler.ts</span>    <span class="desc">← Hero image generation + placement</span>
+├── <span class="dir">services/</span>
+│   ├── <span class="file">gemini.ts</span>           <span class="desc">← Google Gemini API (content, JSON, embeddings, images)</span>
+│   ├── <span class="file">data-store.ts</span>       <span class="desc">← Async file-based storage (sites, posts, analytics)</span>
+│   └── <span class="file">site-crawler.ts</span>     <span class="desc">← Fetches website pages, extracts niche/keywords</span>
+├── <span class="dir">rag/</span>
+│   ├── <span class="file">knowledge-base.ts</span>   <span class="desc">← Manages per-site knowledge entries + summaries</span>
+│   └── <span class="file">vector-store.ts</span>     <span class="desc">← In-memory vectors persisted to JSON files</span>
+├── <span class="dir">scheduler/</span>
+│   └── <span class="file">cron-manager.ts</span>     <span class="desc">← node-cron jobs per site, concurrent-run guard</span>
+└── <span class="dir">types/</span>
+    └── <span class="file">index.ts</span>            <span class="desc">← TypeScript interfaces (SiteConfig, BlogPost, etc.)</span>
+</div>
+
+<!-- FULL PIPELINE FLOW -->
+<h2>Full Blog Generation Pipeline (LangGraph)</h2>
+
+<div class="flow">
+  <div class="flow-box highlight">
+    <div class="title">START</div>
+    <div class="sub">POST /api/sites/:id/generate</div>
+  </div>
+  <div class="arrow-down purple"></div>
+
+  <div class="flow-box blue">
+    <div class="title">1. researchTopic</div>
+    <div class="sub">AI picks topic (or user provides one) + generates title + loads RAG context</div>
+  </div>
+  <div class="arrow-down"></div>
+
+  <div class="flow-box blue">
+    <div class="title">2. writeContent</div>
+    <div class="sub">Gemini writes 800-1200 word blog with brand mentions + SEO keywords</div>
+  </div>
+  <div class="arrow-down"></div>
+
+  <div class="flow-box blue">
+    <div class="title">3. optimizeSEO</div>
+    <div class="sub">AI optimizes meta title, description, slug, keyword density</div>
+  </div>
+  <div class="arrow-down"></div>
+
+  <div class="flow-box green">
+    <div class="title">4. generateInternalLinks</div>
+    <div class="sub">Finds relevant past posts → suggests anchor text + URLs</div>
+  </div>
+  <div class="arrow-down"></div>
+
+  <div class="branch">
+    <div class="branch-col">
+      <div class="branch-label">includeImages = true</div>
+      <div class="flow-box orange">
+        <div class="title">5a. generateImages</div>
+        <div class="sub">1 hero image via Gemini</div>
+      </div>
+    </div>
+    <div class="branch-col">
+      <div class="branch-label">includeImages = false</div>
+      <div class="flow-box">
+        <div class="title">5b. skipImages</div>
+        <div class="sub">No-op, continues</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-down purple"></div>
+
+  <div class="flow-box highlight">
+    <div class="title">6. finalize</div>
+    <div class="sub">Tags + Category + Save to disk + Index in RAG</div>
+  </div>
+  <div class="arrow-down purple"></div>
+
+  <div class="flow-box green">
+    <div class="title">END</div>
+    <div class="sub">Returns BlogPost with SEO score, images, HTML + Markdown</div>
+  </div>
+</div>
+
+<!-- RAG SYSTEM -->
+<h2>How RAG (Retrieval-Augmented Generation) Works</h2>
+
+<p>The RAG system ensures each new blog is unique and builds on previous content instead of repeating topics.</p>
+
+<div class="flow">
+  <div class="flow-row">
+    <div class="flow-box blue">
+      <div class="title">Site Registration</div>
+      <div class="sub">Crawl website → extract niche, features, audience</div>
+    </div>
+    <div class="arrow-right">→</div>
+    <div class="flow-box highlight">
+      <div class="title">Embed & Store</div>
+      <div class="sub">Gemini converts text → 768-dim number vector → saved to vectors.json</div>
+    </div>
+    <div class="arrow-right">→</div>
+    <div class="flow-box green">
+      <div class="title">Knowledge Base</div>
+      <div class="sub">Site overview + each blog's summary + title + content</div>
+    </div>
+  </div>
+</div>
+
+<h3>When generating a new blog:</h3>
+
+<div class="card">
+  <div class="card-title">Topic Research uses RAG</div>
+  <div class="two-col">
+    <div>
+      <strong>Step 1: Coverage Map</strong><br>
+      Reads all stored entries to see "what topics have we already covered?"
+    </div>
+    <div>
+      <strong>Step 2: Similarity Search</strong><br>
+      Embeds the candidate topic → compares cosine similarity against all stored vectors → rejects topics > 82% similar to existing posts
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Content Writing uses RAG</div>
+  <div class="two-col">
+    <div>
+      <strong>Context Injection</strong><br>
+      Top 5 most relevant past posts are injected into the AI prompt: <em>"Here's what you already wrote. Don't repeat — go DEEPER."</em>
+    </div>
+    <div>
+      <strong>Post-Save Indexing</strong><br>
+      After each blog is saved, its summary + title are embedded and added to the knowledge base so the NEXT blog can see it.
+    </div>
+  </div>
+</div>
+
+<h3>RAG prevents this problem:</h3>
+<div class="two-col">
+  <div class="card" style="border-color: #ef4444;">
+    <div class="card-title" style="color:#ef4444;">Without RAG</div>
+    Blog #1: "Invoicing Basics"<br>
+    Blog #2: "Invoicing Basics for Beginners" ← <span style="color:#ef4444">repeats!</span><br>
+    Blog #3: "Getting Started with Invoicing" ← <span style="color:#ef4444">repeats!</span>
+  </div>
+  <div class="card" style="border-color: #22c55e;">
+    <div class="card-title" style="color:#22c55e;">With RAG</div>
+    Blog #1: "Invoicing Basics"<br>
+    Blog #2: "Multi-Currency Payment Processing" ← <span style="color:#22c55e">unique!</span><br>
+    Blog #3: "Tax Compliance for International Billing" ← <span style="color:#22c55e">unique!</span>
+  </div>
+</div>
+
+<!-- TWO-MODE TOPIC DISCOVERY -->
+<h2>Two-Mode Topic Discovery</h2>
+
+<div class="two-col">
+  <div class="agent-box purple">
+    <strong>Mode 1: Deepen</strong> (default)<br><br>
+    Searches vector store for SIMILAR posts to the site's niche.<br><br>
+    Strategy: "Write a follow-up, part 2, advanced version, or how-to guide based on what's already performing well."
+  </div>
+  <div class="agent-box orange">
+    <strong>Mode 2: White Space</strong> (exploreDifferent=true)<br><br>
+    Looks at the full coverage map to find gaps.<br><br>
+    Strategy: "Find topics in the niche that have ZERO coverage. Blind spots. Sub-niches. Contrarian angles."
+  </div>
+</div>
+
+<!-- API CALL BREAKDOWN -->
+<h2>API Calls Per Blog Generation</h2>
+
+<table>
+  <tr><th>Step</th><th>Function</th><th>Calls</th></tr>
+  <tr><td>Topic Research</td><td><code>generateJSON</code></td><td>1</td></tr>
+  <tr><td>Uniqueness Check</td><td><code>generateEmbedding</code> × 3</td><td>3</td></tr>
+  <tr><td>Title Generation</td><td><code>generateJSON</code></td><td>1</td></tr>
+  <tr><td>RAG Context</td><td><code>generateEmbedding</code></td><td>1</td></tr>
+  <tr><td>Write Blog</td><td><code>generateContent</code></td><td>1</td></tr>
+  <tr><td>SEO Optimize</td><td><code>generateJSON</code></td><td>1</td></tr>
+  <tr><td>Internal Links</td><td><code>generateJSON</code> + <code>generateEmbedding</code></td><td>2</td></tr>
+  <tr><td>Tags</td><td><code>generateJSON</code></td><td>1</td></tr>
+  <tr><td>Category</td><td><code>generateJSON</code></td><td>1</td></tr>
+  <tr><td>Hero Image</td><td><code>generateImage</code></td><td>1</td></tr>
+  <tr><td>Post Summary</td><td><code>generateContent</code></td><td>1</td></tr>
+  <tr style="font-weight:700; color:#7c6cff;"><td colspan="2">Total</td><td>~14</td></tr>
+</table>
+
+<p>On free tier (20 req/day) = ~1 blog per day. On paid tier ($0.15/M tokens) = unlimited, costs &lt; $0.01 per blog.</p>
+
+<!-- API ENDPOINTS -->
+<h2>API Endpoints</h2>
+
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+  <tr><td><code>POST</code></td><td>/api/sites/register</td><td>Register site (auto-crawls if URL given)</td></tr>
+  <tr><td><code>POST</code></td><td>/api/sites/:id/generate</td><td>Generate a blog post (manual trigger)</td></tr>
+  <tr><td><code>GET</code></td><td>/api/sites/:id/topics</td><td>Research topic suggestions</td></tr>
+  <tr><td><code>GET</code></td><td>/api/sites/:id/posts</td><td>List all posts (lightweight)</td></tr>
+  <tr><td><code>GET</code></td><td>/api/sites/:id/posts/:postId</td><td>Get full post with HTML content</td></tr>
+  <tr><td><code>PUT</code></td><td>/api/sites/:id/schedule</td><td>Set cron schedule for auto-generation</td></tr>
+  <tr><td><code>POST</code></td><td>/api/sites/:id/knowledge</td><td>Add custom knowledge to RAG</td></tr>
+  <tr><td><code>GET</code></td><td>/api/sites/:id/analytics</td><td>SEO scores, word counts, keyword stats</td></tr>
+  <tr><td><code>GET</code></td><td>/api/widget/:siteId/posts</td><td>Published posts for embed widget</td></tr>
+</table>
+
+<!-- TECH STACK -->
+<h2>Tech Stack</h2>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">AI & Orchestration</div>
+    <ul>
+      <li><strong>Google Gemini 2.5 Flash</strong> — content, JSON, image gen</li>
+      <li><strong>text-embedding-001</strong> — RAG vector embeddings</li>
+      <li><strong>LangGraph</strong> — DAG pipeline with conditional edges</li>
+      <li><strong>LangChain</strong> — unified model interface</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-title">Infrastructure</div>
+    <ul>
+      <li><strong>Express.js</strong> — REST API server</li>
+      <li><strong>node-cron</strong> — scheduled blog generation</li>
+      <li><strong>File-based JSON</strong> — site configs, posts, vectors</li>
+      <li><strong>Async fs.promises</strong> — non-blocking I/O</li>
+    </ul>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 2: SALES ESTIMATION AGENT                            -->
+<!-- ============================================================ -->
+
+<div class="hero">
+  <div>
+    <span class="badge">LangGraph</span>
+    <span class="badge green">Multi-Agent</span>
+    <span class="badge blue">Google Calendar</span>
+    <span class="badge orange">Embeddable Widget</span>
+  </div>
+  <h1 style="margin-top:16px;">Sales Estimation Agent</h1>
+  <p>Multi-agent AI system that handles the entire sales journey: initial inquiry → project estimation → price negotiation → calendar booking — all through an embeddable chat widget.</p>
+</div>
+
+<!-- ARCHITECTURE -->
+<h2>Multi-Agent Architecture</h2>
+
+<div class="flow">
+  <div class="flow-box highlight">
+    <div class="title">Customer Message</div>
+    <div class="sub">Via embedded chat widget</div>
+  </div>
+  <div class="arrow-down purple"></div>
+
+  <div class="flow-box" style="border-color:#fff; background:#ffffff11;">
+    <div class="title">Supervisor Agent (Gemini)</div>
+    <div class="sub">Routes message to the right specialist agent</div>
+  </div>
+  <div class="arrow-down"></div>
+
+  <div class="branch">
+    <div class="branch-col">
+      <div class="branch-label">Project inquiry</div>
+      <div class="flow-box purple">
+        <div class="title">Estimation Agent</div>
+        <div class="sub">Tools: search_knowledge_base, build_estimate</div>
+      </div>
+    </div>
+    <div class="branch-col">
+      <div class="branch-label">Price objection</div>
+      <div class="flow-box orange">
+        <div class="title">Negotiation Agent</div>
+        <div class="sub">No tools — pure LLM reasoning</div>
+      </div>
+    </div>
+    <div class="branch-col">
+      <div class="branch-label">Ready to meet</div>
+      <div class="flow-box green">
+        <div class="title">Booking Agent</div>
+        <div class="sub">Tools: get_calendar_slots, create_booking</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FULL CONVERSATION FLOW -->
+<h2>Full Customer Journey</h2>
+
+<div class="flow">
+  <div class="flow-box highlight">
+    <div class="title">Customer opens chat widget</div>
+    <div class="sub">Embedded on company website</div>
+  </div>
+  <div class="arrow-down purple"></div>
+
+  <div class="flow-box blue">
+    <div class="title">"I need a mobile app for my restaurant"</div>
+    <div class="sub">Supervisor → routes to Estimation Agent</div>
+  </div>
+  <div class="arrow-down"></div>
+
+  <div class="flow-box purple">
+    <div class="title">Estimation Agent gathers requirements</div>
+    <div class="sub">Searches knowledge base for matching services + pricing</div>
+  </div>
+  <div class="arrow-down"></div>
+
+  <div class="flow-box purple">
+    <div class="title">build_estimate tool</div>
+    <div class="sub">Returns structured quote: services, price range, timeline, policies</div>
+  </div>
+  <div class="arrow-down"></div>
+
+  <div class="branch">
+    <div class="branch-col">
+      <div class="branch-label">Customer accepts</div>
+      <div class="flow-box green">
+        <div class="title">Booking Agent</div>
+        <div class="sub">Fetches Google Calendar slots → shows 5 options</div>
+      </div>
+      <div class="arrow-down"></div>
+      <div class="flow-box green">
+        <div class="title">Creates booking</div>
+        <div class="sub">Google Calendar event + Meet link + email confirmation</div>
+      </div>
+    </div>
+    <div class="branch-col">
+      <div class="branch-label">Customer objects to price</div>
+      <div class="flow-box orange">
+        <div class="title">Negotiation Agent</div>
+        <div class="sub">Offers: phased delivery, reduced scope, or payment plan</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FILE STRUCTURE -->
+<h2>Project Structure</h2>
+
+<div class="file-tree">
+<span class="dir">src/</span>
+├── <span class="file">server.ts</span>             <span class="desc">← Express API + rate limiting + security + file uploads</span>
+├── <span class="file">graph.ts</span>              <span class="desc">← LangGraph multi-agent orchestration + MemorySaver</span>
+├── <span class="dir">services/</span>
+│   └── <span class="file">knowledgeBase.ts</span>    <span class="desc">← Document upload, PDF parsing, keyword search</span>
+├── <span class="dir">tools/</span>
+│   └── <span class="file">index.ts</span>            <span class="desc">← search_knowledge_base, build_estimate, calendar, booking</span>
+<span class="dir">public/</span>
+├── <span class="file">widget.js</span>              <span class="desc">← Embeddable chat widget (380×580px)</span>
+├── <span class="file">embed.js</span>               <span class="desc">← Full-page iframe embed</span>
+<span class="dir">Root</span>
+├── <span class="file">pricing.json</span>            <span class="desc">← Services catalog with prices, timelines, policies</span>
+└── <span class="file">knowledgebase/</span>          <span class="desc">← Uploaded docs + metadata (PDF, text, CSV)</span>
+</div>
+
+<!-- AGENT DETAILS -->
+<h2>Agent Details</h2>
+
+<div class="agent-box purple">
+  <h3 style="color:#7c6cff;">Estimation Agent</h3>
+  <p><strong>Tools:</strong> <code>search_knowledge_base</code>, <code>build_estimate</code></p>
+  <p><strong>Flow:</strong></p>
+  <ol>
+    <li>Receives customer requirements from Supervisor</li>
+    <li>Calls <code>search_knowledge_base</code> with keywords from the message</li>
+    <li>Finds matching services from pricing.json + uploaded documents</li>
+    <li>Calls <code>build_estimate</code> to generate structured quote</li>
+    <li>Returns: service list, min/max prices, timeline, policies, included features</li>
+  </ol>
+</div>
+
+<div class="agent-box orange">
+  <h3 style="color:#f59e0b;">Negotiation Agent</h3>
+  <p><strong>Tools:</strong> None (pure LLM reasoning)</p>
+  <p><strong>Strategy:</strong></p>
+  <ol>
+    <li><strong>Phased Delivery</strong> — "Start with MVP at $X, add features in Phase 2"</li>
+    <li><strong>Reduced Scope</strong> — "Remove feature Y to bring cost down to $Z"</li>
+    <li><strong>Payment Plan</strong> — "Split into 3 monthly installments"</li>
+  </ol>
+</div>
+
+<div class="agent-box green">
+  <h3 style="color:#22c55e;">Booking Agent</h3>
+  <p><strong>Tools:</strong> <code>get_calendar_slots</code>, <code>create_booking</code></p>
+  <p><strong>Flow:</strong></p>
+  <ol>
+    <li>Fetches next 5 available slots from Google Calendar (respects working hours + buffer time)</li>
+    <li>Shows clickable slot cards to customer</li>
+    <li>Collects name + email</li>
+    <li>Creates Google Calendar event with Google Meet link</li>
+    <li>Sends confirmation email via Nodemailer</li>
+  </ol>
+</div>
+
+<!-- KNOWLEDGE BASE -->
+<h2>Knowledge Base System</h2>
+
+<div class="flow">
+  <div class="flow-row">
+    <div class="flow-box blue">
+      <div class="title">Upload Documents</div>
+      <div class="sub">PDF, text, CSV, markdown</div>
+    </div>
+    <div class="arrow-right">→</div>
+    <div class="flow-box highlight">
+      <div class="title">Chunk & Index</div>
+      <div class="sub">Split by paragraphs → store in knowledgebase/</div>
+    </div>
+    <div class="arrow-right">→</div>
+    <div class="flow-box green">
+      <div class="title">Keyword Search</div>
+      <div class="sub">Exact match → full query → individual words</div>
+    </div>
+    <div class="arrow-right">→</div>
+    <div class="flow-box orange">
+      <div class="title">AI Context</div>
+      <div class="sub">Search results injected into Estimation Agent prompt</div>
+    </div>
+  </div>
+</div>
+
+<p>The knowledge base also pre-indexes <code>pricing.json</code> (service catalog) so the Estimation Agent can match customer requirements to actual services and prices.</p>
+
+<!-- SECURITY -->
+<h2>Security Features</h2>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">Rate Limiting</div>
+    <ul>
+      <li>10 requests / minute per IP</li>
+      <li>60 requests / hour per IP</li>
+      <li>5 concurrent threads per IP</li>
+      <li>500 char max message length</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-title">Input Protection</div>
+    <ul>
+      <li>HTML tag stripping</li>
+      <li>Code block removal</li>
+      <li>Prompt injection pattern detection</li>
+      <li>Supervisor hop counter (prevents infinite agent loops)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- TECH STACK -->
+<h2>Tech Stack</h2>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">AI & Orchestration</div>
+    <ul>
+      <li><strong>Google Gemini 2.5 Flash</strong> — all agents</li>
+      <li><strong>LangGraph</strong> — multi-agent supervisor pattern</li>
+      <li><strong>LangChain</strong> — tool binding + memory</li>
+      <li><strong>MemorySaver</strong> — conversation persistence</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-title">Integrations</div>
+    <ul>
+      <li><strong>Google Calendar API</strong> — slot fetching + event creation</li>
+      <li><strong>Google Meet</strong> — auto-generated meeting links</li>
+      <li><strong>Nodemailer</strong> — email confirmations</li>
+      <li><strong>Multer</strong> — file upload handling</li>
+    </ul>
+  </div>
+</div>
+
+<!-- COMPARISON -->
+<hr class="divider">
+
+<h2>Both Agents — Side by Side</h2>
+
+<table>
+  <tr><th></th><th>Auto Blog Agent</th><th>Sales Estimation Agent</th></tr>
+  <tr><td><strong>Purpose</strong></td><td>Generate SEO blog posts automatically</td><td>Handle sales inquiries → estimation → booking</td></tr>
+  <tr><td><strong>AI Framework</strong></td><td>LangGraph (linear DAG)</td><td>LangGraph (supervisor multi-agent)</td></tr>
+  <tr><td><strong>AI Model</strong></td><td>Gemini 2.5 Flash</td><td>Gemini 2.5 Flash</td></tr>
+  <tr><td><strong>RAG System</strong></td><td>Vector embeddings + cosine similarity</td><td>Keyword search + document chunks</td></tr>
+  <tr><td><strong>Storage</strong></td><td>JSON files + vector files</td><td>JSON files + uploaded documents</td></tr>
+  <tr><td><strong>Scheduling</strong></td><td>node-cron (daily blog generation)</td><td>No scheduling (event-driven)</td></tr>
+  <tr><td><strong>External APIs</strong></td><td>Google Gemini only</td><td>Google Gemini + Calendar + Meet + Email</td></tr>
+  <tr><td><strong>Frontend</strong></td><td>Dashboard + widget endpoint</td><td>Embeddable chat widget + iframe</td></tr>
+  <tr><td><strong>API Calls/Blog</strong></td><td>~14</td><td>~2-4 per message</td></tr>
+  <tr><td><strong>Cost/Request</strong></td><td>~$0.01 on paid tier</td><td>~$0.003 on paid tier</td></tr>
+</table>
+
+</div>
+
+</body>
+</html>

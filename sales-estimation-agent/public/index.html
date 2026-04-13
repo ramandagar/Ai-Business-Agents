@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Studio — AI Sales Agent</title>
+  <meta name="description"
+    content="Get instant project estimates and schedule discovery calls with our AI-powered sales assistant.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent: #6366F1;
+      --accent2: #8B5CF6;
+      --accent3: #A78BFA;
+      --green: #10B981;
+      --green2: #34D399;
+      --orange: #F59E0B;
+      --red: #EF4444;
+      --bg: #09090B;
+      --surface: #111113;
+      --surface2: #18181B;
+      --surface3: #27272A;
+      --border: rgba(255, 255, 255, 0.06);
+      --border2: rgba(255, 255, 255, 0.1);
+      --text: #FAFAFA;
+      --text2: #D4D4D8;
+      --muted: #71717A;
+      --radius: 16px;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 700px;
+      background: radial-gradient(ellipse, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ────────────────────────────────────────────────────── */
+    .app {
+      width: 100%;
+      max-width: 880px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 24px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      backdrop-filter: blur(20px);
+      background: rgba(9, 9, 11, 0.8);
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+      flex-shrink: 0;
+    }
+
+    .header-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .header-name {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .header-sub {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .online-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+      animation: breathe 2.5s ease infinite;
+    }
+
+    @keyframes breathe {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.4
+      }
+    }
+
+    .agent-chip {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      color: #A5B4FC;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .agent-chip.negotiation {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.2);
+      color: #FCD34D;
+    }
+
+    .agent-chip.booking {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.2);
+      color: #6EE7B7;
+    }
+
+    .header-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .header-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: all 0.15s;
+    }
+
+    .header-btn:hover {
+      background: var(--surface3);
+      color: var(--text);
+    }
+
+    /* ── Messages ──────────────────────────────────────────────────── */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scroll-behavior: smooth;
+    }
+
+    .messages::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px;
+    }
+
+    /* ── Message Rows ──────────────────────────────────────────────── */
+    .msg-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      max-width: 100%;
+    }
+
+    .msg-row.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .msg-row.agent .avatar {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+    }
+
+    .msg-row.user .avatar {
+      background: var(--surface3);
+      border: 1px solid var(--border);
+    }
+
+    .msg-content {
+      display: flex;
+      flex-direction: column;
+      max-width: 78%;
+      min-width: 60px;
+    }
+
+    .msg-row.user .msg-content {
+      align-items: flex-end;
+    }
+
+    .bubble {
+      padding: 11px 15px;
+      border-radius: 16px;
+      font-size: 13.5px;
+      line-height: 1.7;
+      word-break: break-word;
+      animation: popIn 0.25s ease;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.97) translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .msg-row.agent .bubble {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-row.user .bubble {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.25);
+    }
+
+    .bubble strong {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .bubble ul,
+    .bubble ol {
+      padding-left: 16px;
+      margin: 5px 0;
+    }
+
+    .bubble li {
+      margin: 2px 0;
+    }
+
+    .bubble p {
+      margin: 3px 0;
+    }
+
+    .bubble p:first-child {
+      margin-top: 0;
+    }
+
+    .bubble p:last-child {
+      margin-bottom: 0;
+    }
+
+    .bubble code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .ts {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 3px;
+      padding: 0 4px;
+    }
+
+    /* ── Slot Cards ────────────────────────────────────────────────── */
+    .slots-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      animation: popIn 0.3s ease;
+    }
+
+    .slot-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: rgba(99, 102, 241, 0.06);
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex: 1;
+      min-width: 200px;
+      max-width: 280px;
+    }
+
+    .slot-card:hover {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: rgba(99, 102, 241, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.15);
+    }
+
+    .slot-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .slot-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .slot-day {
+      font-size: 11px;
+      font-weight: 700;
+      color: #A5B4FC;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .slot-date {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .slot-time {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .slot-arrow {
+      background: rgba(99, 102, 241, 0.2);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+
+    .slot-card:hover .slot-arrow {
+      background: var(--accent);
+    }
+
+    /* ── Estimate Card ─────────────────────────────────────────────── */
+    .estimate-card {
+      background: rgba(16, 185, 129, 0.04);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 10px;
+      font-size: 13px;
+      animation: popIn 0.3s ease;
+      max-width: 360px;
+    }
+
+    .ec-title {
+      font-weight: 700;
+      color: var(--green2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      letter-spacing: -0.01em;
+    }
+
+    .ec-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text2);
+      font-size: 12.5px;
+    }
+
+    .ec-row:last-of-type {
+      border: none;
+    }
+
+    .ec-name {
+      flex: 1;
+    }
+
+    .ec-price {
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .ec-divider {
+      height: 1px;
+      background: rgba(16, 185, 129, 0.15);
+      margin: 8px 0;
+    }
+
+    .ec-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--green2);
+      margin-top: 4px;
+    }
+
+    .ec-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    /* ── Booking Confirmation ──────────────────────────────────────── */
+    .booking-card {
+      background: rgba(16, 185, 129, 0.06);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 10px;
+      animation: popIn 0.3s ease;
+      text-align: center;
+    }
+
+    .booking-card .bc-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .booking-card .bc-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--green2);
+    }
+
+    .booking-card .bc-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .booking-card .bc-link {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 20px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+
+    .booking-card .bc-link:hover {
+      opacity: 0.85;
+    }
+
+    /* ── Typing indicator ──────────────────────────────────────────── */
+    .typing-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .typing-bubble {
+      padding: 14px 18px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: typing 1.4s infinite;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0);
+        background: var(--muted);
+      }
+
+      30% {
+        transform: translateY(-6px);
+        background: var(--accent);
+      }
+    }
+
+    /* ── Input Area ────────────────────────────────────────────────── */
+    .input-area {
+      padding: 12px 20px 18px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      backdrop-filter: blur(20px);
+      background: rgba(9, 9, 11, 0.8);
+    }
+
+    .input-box {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 18px;
+      padding: 8px 10px 8px 6px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-box:focus-within {
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.06);
+    }
+
+    .attach-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .attach-btn:hover {
+      background: var(--surface3);
+      color: var(--text);
+    }
+
+    textarea {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      line-height: 1.5;
+      max-height: 120px;
+      scrollbar-width: none;
+      padding: 6px 4px;
+    }
+
+    textarea::placeholder {
+      color: var(--muted);
+    }
+
+    textarea::-webkit-scrollbar {
+      display: none;
+    }
+
+    .send-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.15s, transform 0.1s;
+      box-shadow: 0 3px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .send-btn:hover {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+
+    .send-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: white;
+    }
+
+    .input-hint {
+      font-size: 10px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 6px;
+      opacity: 0.7;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    /* Upload indicator */
+    .upload-toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      border-radius: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-size: 13px;
+      z-index: 9999;
+      animation: slideDown 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    /* ── Welcome ───────────────────────────────────────────────────── */
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 14px;
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    .welcome-icon {
+      width: 68px;
+      height: 68px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      box-shadow: 0 8px 36px rgba(99, 102, 241, 0.3);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-6px)
+      }
+    }
+
+    .welcome h2 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .welcome p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 400px;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .suggestion {
+      padding: 9px 18px;
+      border-radius: 22px;
+      border: 1px solid var(--border2);
+      background: var(--surface2);
+      color: #A5B4FC;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .suggestion:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-1px);
+    }
+
+    /* ── Responsive ────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .messages {
+        padding: 14px;
+      }
+
+      .msg-content {
+        max-width: 90%;
+      }
+
+      .input-area {
+        padding: 10px 12px 14px;
+      }
+
+      .slot-card {
+        min-width: 100%;
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <header>
+      <div class="logo">🤖</div>
+      <div class="header-info">
+        <div class="header-name" id="biz-name">CWS Technology Assistant</div>
+        <div class="header-sub">
+          <div class="online-dot"></div>
+          <span>Online</span>
+          <span id="agent-chip" class="agent-chip" style="display:none"></span>
+        </div>
+      </div>
+      <div class="header-btns">
+        <button class="header-btn" onclick="newChat()" title="New conversation">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+            <path
+              d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🤖</div>
+        <h2>Hi! I'm your AI sales assistant</h2>
+        <p>Describe your project and I'll create an instant cost estimate. Ready? Let's start! You can also upload a PDF
+          with your requirements.</p>
+        <div class="suggestions">
+          <div class="suggestion" onclick="send('I need a website for my business')">💼 Business website</div>
+          <div class="suggestion" onclick="send('How much does a mobile app cost?')">📱 Mobile app</div>
+          <div class="suggestion" onclick="send('I need an e-commerce store')">🛒 E-commerce</div>
+          <div class="suggestion" onclick="send('Schedule a discovery call')">📅 Book a call</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-box">
+        <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Upload PDF">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path
+              d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" />
+          </svg>
+        </button>
+        <textarea id="input" placeholder="Describe what you want to build..." rows="1"></textarea>
+        <button class="send-btn" onclick="send()" id="send-btn">
+          <svg viewBox="0 0 24 24">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+          </svg>
+        </button>
+      </div>
+      <input type="file" id="file-input" accept=".pdf,.txt,.csv,.md" onchange="handleFileUpload(event)">
+      <div class="input-hint">Powered by CWS Technology</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+    const KEY = `sa_thread_v2`;
+    let threadId = localStorage.getItem(KEY) || ('t_' + Math.random().toString(36).slice(2) + Date.now());
+    localStorage.setItem(KEY, threadId);
+    let busy = false;
+
+    // ── Init ─────────────────────────────────────────────
+    fetch(API_URL + '/health').then(r => r.json()).then(d => {
+      if (d.business) {
+        document.getElementById('biz-name').textContent = d.business + ' — Assistant';
+        document.title = d.business + ' — AI Sales Agent';
+      }
+    }).catch(() => { });
+
+    // ── Markdown renderer ────────────────────────────────
+    function md(text) {
+      let h = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      h = h.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+      const lines = h.split('\n');
+      const out = [];
+      let ul = false, ol = false;
+      for (const line of lines) {
+        const ulm = line.match(/^[-*•]\s+(.+)/);
+        const olm = line.match(/^\d+\.\s+(.+)/);
+        if (ulm) {
+          if (!ul) { out.push('<ul>'); ul = true; }
+          if (ol) { out.push('</ol>'); ol = false; }
+          out.push(`<li>${ulm[1]}</li>`);
+        } else if (olm) {
+          if (!ol) { out.push('<ol>'); ol = true; }
+          if (ul) { out.push('</ul>'); ul = false; }
+          out.push(`<li>${olm[1]}</li>`);
+        } else {
+          if (ul) { out.push('</ul>'); ul = false; }
+          if (ol) { out.push('</ol>'); ol = false; }
+          out.push(line.trim() === '' ? '' : `<p>${line}</p>`);
+        }
+      }
+      if (ul) out.push('</ul>');
+      if (ol) out.push('</ol>');
+      return out.filter(Boolean).join('');
+    }
+
+    function now() { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+    function scroll() { requestAnimationFrame(() => { const m = document.getElementById('messages'); m.scrollTop = m.scrollHeight; }); }
+
+    // ── Add message ──────────────────────────────────────
+    function addMsg(role, text, time) {
+      document.getElementById('welcome')?.remove();
+      const m = document.getElementById('messages');
+      const row = document.createElement('div');
+      row.className = `msg-row ${role}`;
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = role === 'agent' ? '🤖' : '👤';
+      const content = document.createElement('div');
+      content.className = 'msg-content';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      if (role === 'agent') bubble.innerHTML = md(text);
+      else bubble.textContent = text;
+      const ts = document.createElement('div');
+      ts.className = 'ts';
+      ts.textContent = time || now();
+      content.appendChild(bubble);
+      content.appendChild(ts);
+      row.appendChild(avatar);
+      row.appendChild(content);
+      m.appendChild(row);
+      scroll();
+      return content;
+    }
+
+    // ── Render Slot Cards ────────────────────────────────
+    function renderSlots(slots, container) {
+      const wrap = document.createElement('div');
+      wrap.className = 'slots-container';
+      slots.forEach(slot => {
+        const card = document.createElement('div');
+        card.className = 'slot-card';
+        card.innerHTML = `
+      <div class="slot-info">
+        <div class="slot-day">${slot.day}</div>
+        <div class="slot-date">${slot.date}</div>
+        <div class="slot-time">${slot.time}</div>
+      </div>
+      <div class="slot-arrow">📅 Book</div>
+    `;
+        card.onclick = () => {
+          if (busy) return;
+          document.querySelectorAll('.slot-card').forEach(c => { c.style.opacity = '0.4'; c.style.pointerEvents = 'none'; });
+          card.style.opacity = '1';
+          card.style.borderColor = 'rgba(99,102,241,0.5)';
+          card.style.background = 'rgba(99,102,241,0.15)';
+          send(`${slot.day}, ${slot.date} at ${slot.time}`);
+        };
+        wrap.appendChild(card);
+      });
+      container.appendChild(wrap);
+      scroll();
+    }
+
+    // ── Render Estimate Card ─────────────────────────────
+    function renderEstimate(est, container) {
+      const card = document.createElement('div');
+      card.className = 'estimate-card';
+      const cur = est.currency || '₹';
+      const fmt = n => cur + ' ' + Number(n).toLocaleString('en-IN');
+      let itemsHTML = est.items.map(i =>
+        `<div class="ec-row"><span class="ec-name">${i.name}</span><span class="ec-price">${fmt(i.minPrice)}–${fmt(i.maxPrice)}</span></div>`
+      ).join('');
+      card.innerHTML = `
+    <div class="ec-title">📊 Project Estimate</div>
+    ${itemsHTML}
+    <div class="ec-divider"></div>
+    <div class="ec-total">
+      <span>Total</span>
+      <span>${fmt(est.totalMin)}–${fmt(est.totalMax)}</span>
+    </div>
+    <div class="ec-meta">
+      ⏱ Timeline: ${est.timeline || 'TBD'}<br>
+      📄 Valid for ${est.validDays || 30} days<br>
+      💳 ${est.policies?.payment || '50% advance, 50% on delivery'}
+    </div>
+  `;
+      container.appendChild(card);
+      scroll();
+    }
+
+    // ── Render Booking Confirmation ──────────────────────
+    function renderBooking(bk, container) {
+      if (!bk.success) return;
+      const card = document.createElement('div');
+      card.className = 'booking-card';
+      card.innerHTML = `
+    <div class="bc-icon">🎉</div>
+    <div class="bc-title">Meeting Booked!</div>
+    <div class="bc-sub">Check your email for the calendar invite</div>
+    ${bk.meetLink ? `<a class="bc-link" href="${bk.meetLink}" target="_blank">🎥 Join Google Meet</a>` : ''}
+    ${bk.link ? `<a class="bc-link" href="${bk.link}" target="_blank" style="margin-left:6px">📅 View Event</a>` : ''}
+  `;
+      container.appendChild(card);
+      scroll();
+    }
+
+    // ── Typing ───────────────────────────────────────────
+    function showTyping() {
+      document.getElementById('welcome')?.remove();
+      const m = document.getElementById('messages');
+      const row = document.createElement('div');
+      row.className = 'typing-row'; row.id = 'typing';
+      const av = document.createElement('div');
+      av.className = 'avatar'; av.textContent = '🤖';
+      const bubble = document.createElement('div');
+      bubble.className = 'typing-bubble';
+      bubble.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+      row.appendChild(av); row.appendChild(bubble);
+      m.appendChild(row); scroll();
+    }
+    function hideTyping() { document.getElementById('typing')?.remove(); }
+
+    // ── Agent chip ───────────────────────────────────────
+    function setAgent(agent) {
+      const chip = document.getElementById('agent-chip');
+      if (!agent) { chip.style.display = 'none'; return; }
+      const labels = { estimation: '📊 Estimating', negotiation: '🤝 Negotiating', booking: '📅 Booking' };
+      chip.textContent = labels[agent] || agent;
+      chip.className = `agent-chip ${agent}`;
+      chip.style.display = '';
+    }
+
+    // ── Send ─────────────────────────────────────────────
+    async function send(preset) {
+      const input = document.getElementById('input');
+      const msg = (preset || input.value || '').trim();
+      if (!msg || busy) return;
+      if (!preset) { input.value = ''; input.style.height = 'auto'; }
+      addMsg('user', msg);
+      busy = true;
+      showTyping();
+
+      try {
+        const res = await fetch(API_URL + '/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ thread_id: threadId, message: msg }),
+        });
+        const data = await res.json();
+        hideTyping();
+
+        if (data.reply) {
+          const content = addMsg('agent', data.reply);
+          // 🔥 FIX: Render Estimate FIRST, then Slots below it
+          if (data.estimate) renderEstimate(data.estimate, content);
+          if (data.slots && data.slots.length > 0) renderSlots(data.slots, content);
+          if (data.booking && data.booking.success) renderBooking(data.booking, content);
+        }
+        if (data.agent) setAgent(data.agent);
+      } catch (err) {
+        console.error('Chat error:', err);
+        hideTyping();
+        addMsg('agent', 'Something went wrong processing the response. Please try again.');
+      }
+
+      busy = false;
+      if (!preset) document.getElementById('input').focus();
+      scroll();
+    }
+
+    // ── File Upload ──────────────────────────────────────
+    async function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      e.target.value = '';
+
+      const toast = document.createElement('div');
+      toast.className = 'upload-toast';
+      toast.innerHTML = `⏳ Uploading ${file.name}...`;
+      document.body.appendChild(toast);
+
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch(API_URL + '/api/upload', { method: 'POST', body: form });
+        const data = await res.json();
+
+        toast.remove();
+        if (data.success) {
+          const t2 = document.createElement('div');
+          t2.className = 'upload-toast';
+          t2.innerHTML = `✅ ${file.name} uploaded (${data.document.chunks} sections indexed)`;
+          document.body.appendChild(t2);
+          setTimeout(() => t2.remove(), 3000);
+          send(`I just uploaded a document: ${file.name}. Please review it and use it for my project estimation.`);
+        } else {
+          const t2 = document.createElement('div');
+          t2.className = 'upload-toast';
+          t2.innerHTML = `❌ Upload failed: ${data.error}`;
+          document.body.appendChild(t2);
+          setTimeout(() => t2.remove(), 4000);
+        }
+      } catch {
+        toast.remove();
+        const t2 = document.createElement('div');
+        t2.className = 'upload-toast';
+        t2.innerHTML = '❌ Upload failed. Please try again.';
+        document.body.appendChild(t2);
+        setTimeout(() => t2.remove(), 3000);
+      }
+    }
+
+    // ── New Chat ─────────────────────────────────────────
+    function newChat() {
+      threadId = 't_' + Math.random().toString(36).slice(2) + Date.now();
+      localStorage.setItem(KEY, threadId);
+      const m = document.getElementById('messages');
+      m.innerHTML = '';
+      setAgent(null);
+      m.innerHTML = `
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">🤖</div>
+      <h2>Hi! I'm your AI sales assistant</h2>
+      <p>Describe your project and I'll create an instant cost estimate. Ready? Let's start!</p>
+      <div class="suggestions">
+        <div class="suggestion" onclick="send('I need a website for my business')">💼 Business website</div>
+        <div class="suggestion" onclick="send('How much does a mobile app cost?')">📱 Mobile app</div>
+        <div class="suggestion" onclick="send('I need an e-commerce store')">🛒 E-commerce</div>
+        <div class="suggestion" onclick="send('Schedule a discovery call')">📅 Book a call</div>
+      </div>
+    </div>`;
+    }
+
+    // ── Input events ─────────────────────────────────────
+    const inp = document.getElementById('input');
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+    inp.addEventListener('input', () => { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 120) + 'px'; });
+  </script>
+</body>
+
+</html>

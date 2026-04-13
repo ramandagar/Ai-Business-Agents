@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Blog Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { border: "hsl(240 5.9% 90%)", input: "hsl(240 5.9% 90%)", ring: "hsl(240 5.9% 10%)", background: "hsl(0 0% 100%)", foreground: "hsl(240 10% 3.9%)", primary: { DEFAULT: "hsl(240 5.9% 10%)", foreground: "hsl(0 0% 98%)" }, secondary: { DEFAULT: "hsl(240 4.8% 95.9%)", foreground: "hsl(240 5.9% 10%)" }, destructive: { DEFAULT: "hsl(0 84.2% 60.2%)", foreground: "hsl(0 0% 98%)" }, muted: { DEFAULT: "hsl(240 4.8% 95.9%)", foreground: "hsl(240 3.8% 46.1%)" }, accent: { DEFAULT: "hsl(240 4.8% 95.9%)", foreground: "hsl(240 5.9% 10%)" }, card: { DEFAULT: "hsl(0 0% 100%)", foreground: "hsl(240 10% 3.9%)" }, success: { DEFAULT: "hsl(142 76% 36%)", foreground: "hsl(0 0% 100%)" } } } }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer base { * { @apply border-border; } body { @apply bg-background text-foreground; } }
+    .nav-btn { @apply flex items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground rounded-md transition-colors hover:text-foreground hover:bg-accent w-full text-left; }
+    .nav-btn.active { @apply bg-accent text-foreground; }
+    .btn { @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer; }
+    .btn-primary { @apply bg-primary text-primary-foreground hover:bg-primary/90; }
+    .btn-secondary { @apply bg-secondary text-secondary-foreground hover:bg-secondary/80; }
+    .btn-destructive { @apply bg-destructive text-destructive-foreground hover:bg-destructive/90; }
+    .btn-success { @apply bg-success text-success-foreground hover:bg-success/90; }
+    .btn-outline { @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground; }
+    .input { @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50; }
+    .textarea { @apply flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px]; }
+    .card { @apply rounded-lg border bg-card text-card-foreground shadow-sm; }
+    .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+    .help { @apply text-xs text-muted-foreground mt-1; }
+  </style>
+</head>
+
+<body class="flex h-screen overflow-hidden antialiased">
+  <!-- Sidebar -->
+  <aside class="w-64 border-r bg-muted/30 flex flex-col">
+    <div class="h-14 flex items-center px-6 border-b"><i data-lucide="bot" class="w-5 h-5 mr-2 text-primary"></i><span
+        class="font-bold tracking-tight">AutoBlog Agent</span></div>
+    <div class="flex-1 overflow-auto py-4 px-3 space-y-1">
+      <button class="nav-btn active" onclick="nav('dashboard')"><i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+        Dashboard</button>
+      <button class="nav-btn" onclick="nav('generate')"><i data-lucide="pen-tool" class="w-4 h-4"></i> Generate
+        Post</button>
+      <button class="nav-btn" onclick="nav('posts')"><i data-lucide="files" class="w-4 h-4"></i> All Posts</button>
+      <div class="px-3 pt-4 pb-2 text-xs font-semibold text-muted-foreground">Settings</div>
+      <button class="nav-btn" onclick="nav('sites')"><i data-lucide="globe" class="w-4 h-4"></i> Sites</button>
+      <button class="nav-btn" onclick="nav('schedule')"><i data-lucide="clock" class="w-4 h-4"></i> Schedule</button>
+      <button class="nav-btn" onclick="nav('knowledge')"><i data-lucide="brain" class="w-4 h-4"></i> Knowledge</button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 flex flex-col min-w-0 bg-background">
+    <header class="h-14 border-b px-6 flex justify-between items-center bg-card">
+      <div class="font-medium text-sm flex items-center gap-2"><i data-lucide="globe"
+          class="w-4 h-4 text-muted-foreground"></i><span id="header-site">Select a Site</span></div>
+      <div id="loader" class="hidden"><i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i></div>
+    </header>
+    <div class="flex-1 overflow-auto p-6 md:p-8">
+      <div id="content" class="max-w-5xl mx-auto space-y-6"></div>
+    </div>
+  </main>
+
+  <!-- Toast container -->
+  <div id="toast" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+  <!-- Post detail modal -->
+  <div id="post-detail" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-4xl max-h-[85vh] overflow-auto rounded-lg shadow-xl p-8 relative">
+      <button onclick="document.getElementById('post-detail').classList.add('hidden')" class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentSiteId = localStorage.getItem('ab_site_id');
+    let sites = [];
+
+    // ── Utilities ──────────────────────────────────────────────
+
+    const showToast = (msg, err = false) => {
+      const t = document.createElement('div');
+      t.className = `p-4 rounded-md border text-sm font-medium shadow-lg transition-all ${err ? 'bg-destructive/10 border-destructive text-destructive' : 'bg-card border-border text-foreground'}`;
+      t.innerText = msg;
+      document.getElementById('toast').appendChild(t);
+      setTimeout(() => t.remove(), 4000);
+    }
+
+    const api = async (endpoint, opts = {}) => {
+      document.getElementById('loader').classList.remove('hidden');
+      try {
+        const r = await fetch(endpoint, { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+        return await r.json();
+      } catch (e) {
+        showToast('API Error: ' + e.message, true); return { error: e.message };
+      } finally {
+        document.getElementById('loader').classList.add('hidden');
+      }
+    };
+
+    const nav = (page) => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.onclick.toString().includes(`'${page}'`)));
+      const c = document.getElementById('content');
+      if (page === 'dashboard') renderDashboard(c);
+      else if (page === 'generate') renderGenerate(c);
+      else if (page === 'posts') renderPosts(c);
+      else if (page === 'sites') renderSites(c);
+      else if (page === 'schedule') renderSchedule(c);
+      else if (page === 'knowledge') renderKnowledge(c);
+      lucide.createIcons();
+    }
+
+    const updateHeader = () => {
+      const s = sites.find(x => x.id === currentSiteId);
+      document.getElementById('header-site').innerText = s ? `${s.name} — ${s.niche}` : 'Select a Site →';
+    }
+
+    const curSite = () => sites.find(x => x.id === currentSiteId);
+
+    const noSiteMsg = `<div class="card p-12 text-center"><p class="text-muted-foreground mb-4">No site selected.</p><button class="btn btn-primary" onclick="nav('sites')">Go to Sites →</button></div>`;
+
+    async function init() {
+      const d = await api('/api/sites');
+      sites = d.sites || [];
+      if (!currentSiteId && sites.length > 0) { currentSiteId = sites[0].id; localStorage.setItem('ab_site_id', currentSiteId); }
+      updateHeader();
+      nav('dashboard');
+    }
+
+    // ── DASHBOARD ─────────────────────────────────────────────
+
+    async function renderDashboard(c) {
+      if (!currentSiteId) return c.innerHTML = noSiteMsg;
+      const site = curSite();
+      let stats = { totalPosts: 0, averageSeoScore: 0, averageWordCount: 0 };
+      const d = await api(`/api/sites/${currentSiteId}/analytics`);
+      if (d.analytics) stats = d.analytics;
+      let schedInfo = '';
+      try { const sd = await api('/api/schedules'); const sched = (sd.schedules||[]).find(x=>x.siteId===currentSiteId); if (sched) schedInfo = `<span class="badge ${sched.isRunning ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}">${sched.isRunning ? '⏳ Generating now...' : '✅ Active'}</span> <span class="text-xs text-muted-foreground ml-2">Schedule: ${site?.schedule || 'none'}</span> ${sched.lastRun ? `<span class="text-xs text-muted-foreground ml-2">Last run: ${new Date(sched.lastRun).toLocaleString()}</span>`:''}`; } catch(e) {}
+
+      c.innerHTML = `
+        <div><h2 class="text-2xl font-bold tracking-tight">Dashboard</h2><p class="text-muted-foreground">Overview for <strong>${site?.name || 'Unknown'}</strong></p></div>
+
+        <div class="grid gap-4 md:grid-cols-4">
+          <div class="card p-5"><div class="text-sm font-medium text-muted-foreground">Total Posts</div><div class="text-3xl font-bold mt-1">${stats.totalPosts}</div></div>
+          <div class="card p-5"><div class="text-sm font-medium text-muted-foreground">Avg. SEO Score</div><div class="text-3xl font-bold mt-1">${stats.averageSeoScore}<span class="text-base text-muted-foreground">/100</span></div></div>
+          <div class="card p-5"><div class="text-sm font-medium text-muted-foreground">Avg. Word Count</div><div class="text-3xl font-bold mt-1">${stats.averageWordCount}</div></div>
+          <div class="card p-5"><div class="text-sm font-medium text-muted-foreground">Keywords</div><div class="text-3xl font-bold mt-1">${site?.keywords?.length || 0}</div></div>
+        </div>
+
+        ${schedInfo ? `<div class="card p-4 flex items-center gap-2">${schedInfo}</div>` : ''}
+
+        <div class="card p-5">
+          <h3 class="font-semibold mb-2">Site Info</h3>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><span class="text-muted-foreground">Niche:</span> ${site?.niche || '-'}</div>
+            <div><span class="text-muted-foreground">Audience:</span> ${site?.targetAudience || '-'}</div>
+            <div><span class="text-muted-foreground">Voice:</span> ${site?.brandVoice || '-'}</div>
+            <div><span class="text-muted-foreground">URL:</span> ${site?.url || 'Not set'}</div>
+          </div>
+          ${site?.keywords?.length ? `<div class="mt-3 flex flex-wrap gap-1">${site.keywords.map(k=>`<span class="badge bg-muted text-muted-foreground">${k}</span>`).join('')}</div>` : ''}
+        </div>
+
+        <div class="flex gap-3">
+          <button class="btn btn-primary" onclick="nav('generate')"><i data-lucide="pen-tool" class="w-4 h-4 mr-2"></i>Generate New Post</button>
+          <button class="btn btn-outline" onclick="nav('posts')"><i data-lucide="files" class="w-4 h-4 mr-2"></i>View All Posts</button>
+        </div>
+      `;
+    }
+
+    // ── GENERATE POST ─────────────────────────────────────────
+
+    async function renderGenerate(c) {
+      if (!currentSiteId) return c.innerHTML = noSiteMsg;
+      const site = curSite();
+      const isReady = site?.url || site?.systemPrompt || (site?.niche && site?.niche !== 'general');
+
+      if (!isReady) {
+        c.innerHTML = `
+          <div><h2 class="text-2xl font-bold tracking-tight">Generate Content</h2></div>
+          <div class="card p-8 max-w-2xl text-center space-y-4">
+            <div class="text-4xl">⚠️</div>
+            <h3 class="font-bold text-lg">Site Not Configured</h3>
+            <p class="text-muted-foreground">Before generating blog posts, you need to configure <strong>${site?.name}</strong> with a website URL so the AI knows what to write about.</p>
+            <p class="text-sm text-muted-foreground">Go to <strong>Sites</strong>, delete this site, and re-add it with a proper URL.</p>
+            <button class="btn btn-primary" onclick="nav('sites')">Go to Sites →</button>
+          </div>`;
+        return;
+      }
+
+      c.innerHTML = `
+        <div><h2 class="text-2xl font-bold tracking-tight">Generate Content</h2><p class="text-muted-foreground">Create a blog post for <strong>${site?.name}</strong></p></div>
+
+        <div class="card p-6 space-y-5 max-w-2xl">
+          <!-- Topic -->
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Topic</label>
+            <input id="g-topic" class="input" placeholder="Leave blank for AI to pick a topic automatically">
+            <p class="help">💡 Leave empty = AI discovers trending topics in your niche. Type a topic = AI writes about exactly that.</p>
+          </div>
+
+          <!-- Style + Strategy row -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <label class="text-sm font-medium">Blog Style</label>
+              <select id="g-type" class="input">
+                <option value="educational">📚 Educational</option>
+                <option value="tutorial">🔧 Tutorial / How-To</option>
+                <option value="listicle">📋 Listicle (Top X...)</option>
+                <option value="case-study">📊 Case Study</option>
+                <option value="news">📰 News / Trends</option>
+                <option value="opinion">💬 Opinion / Thought Leadership</option>
+              </select>
+              <p class="help">Determines the writing format and structure</p>
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm font-medium">Topic Strategy</label>
+              <select id="g-exp" class="input">
+                <option value="false">🔍 Deepen — Related to existing posts</option>
+                <option value="true">🌍 Explore — Find untouched topics</option>
+              </select>
+              <p class="help"><b>Deepen:</b> Goes deeper into topics you've already covered.<br><b>Explore:</b> Finds brand new topics you haven't written about yet.</p>
+            </div>
+          </div>
+
+          <!-- Custom instructions -->
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Custom Instructions <span class="text-muted-foreground">(optional)</span></label>
+            <textarea id="g-custom" class="textarea" placeholder="E.g.: Focus on Indian freelancers. Mention BillingBee's free plan. Include a comparison table."></textarea>
+            <p class="help">Add any specific instructions for this blog post. These override default behavior.</p>
+          </div>
+
+          <button class="btn btn-primary w-full h-12 text-base" id="g-btn" onclick="doGen()">
+            <i data-lucide="sparkles" class="w-5 h-5 mr-2"></i>Generate Blog Post
+          </button>
+
+          <div id="g-progress" class="hidden">
+            <div class="flex items-center gap-3 p-4 bg-muted/50 rounded-md border animate-pulse">
+              <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
+              <div>
+                <p class="font-medium text-sm">Generating blog post...</p>
+                <p class="text-xs text-muted-foreground">This takes 1-3 minutes. The AI is researching, writing, and optimizing for SEO.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="g-res"></div>
+        </div>
+      `;
+    }
+
+    async function doGen() {
+      const btn = document.getElementById('g-btn');
+      const res = document.getElementById('g-res');
+      const progress = document.getElementById('g-progress');
+      btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i>Generating...';
+      progress.classList.remove('hidden');
+      res.innerHTML = '';
+      lucide.createIcons();
+
+      const body = {
+        topic: document.getElementById('g-topic').value || undefined,
+        blogType: document.getElementById('g-type').value,
+        exploreDifferent: document.getElementById('g-exp').value === 'true',
+        customPrompt: document.getElementById('g-custom').value || undefined,
+      };
+
+      const d = await api(`/api/sites/${currentSiteId}/generate`, { method: 'POST', body });
+      btn.disabled = false; btn.innerHTML = '<i data-lucide="sparkles" class="w-5 h-5 mr-2"></i>Generate Blog Post';
+      progress.classList.add('hidden');
+      lucide.createIcons();
+
+      if (d.error) return showToast(d.details || d.error, true);
+      showToast('✅ Blog post generated!');
+
+      res.innerHTML = `
+        <div class="card p-6 mt-4 space-y-4">
+          <div class="flex items-start justify-between">
+            <h3 class="font-bold text-xl">${d.post.title}</h3>
+            <button class="btn btn-outline text-xs h-8" onclick="viewPost('${d.post.id}')">Full View</button>
+          </div>
+          <div class="flex gap-3 text-xs">
+            <span class="badge bg-muted text-muted-foreground">SEO: ${d.post.seoScore?.overall || '-'}/100</span>
+            <span class="badge bg-muted text-muted-foreground">Words: ${d.post.wordCount}</span>
+            <span class="badge bg-muted text-muted-foreground">Status: ${d.post.status}</span>
+          </div>
+          <div class="prose prose-sm max-w-none text-foreground">${(d.post.content || '').slice(0, 2000)}${d.post.content?.length > 2000 ? '<p class="text-muted-foreground">... <a class="underline cursor-pointer" onclick="viewPost(\''+d.post.id+'\')">Read full post →</a></p>' : ''}</div>
+        </div>`;
+    }
+
+    // ── ALL POSTS ─────────────────────────────────────────────
+
+    async function renderPosts(c) {
+      if (!currentSiteId) return c.innerHTML = noSiteMsg;
+      const d = await api(`/api/sites/${currentSiteId}/posts`);
+      const posts = d.posts || [];
+      c.innerHTML = `
+        <div class="flex justify-between items-center"><h2 class="text-2xl font-bold tracking-tight">All Posts <span class="text-base font-normal text-muted-foreground">(${posts.length})</span></h2></div>
+        ${posts.length === 0 ? '<div class="card p-12 text-center text-muted-foreground">No posts yet. Generate your first post! <button class="btn btn-primary ml-4" onclick="nav(\'generate\')">Generate →</button></div>' : ''}
+        <div class="space-y-3">
+          ${posts.map(p => `
+            <div class="card p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold truncate">${p.title}</h3>
+                <div class="flex gap-3 mt-1 text-xs text-muted-foreground">
+                  <span>${p.wordCount} words</span>
+                  <span>SEO: ${p.seoScore}/100</span>
+                  <span class="badge ${p.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">${p.status}</span>
+                </div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button class="btn btn-outline h-8 text-xs" onclick="viewPost('${p.id}')">View</button>
+                ${p.status === 'draft' ? `<button class="btn btn-success h-8 text-xs" onclick="publishPost('${p.id}')">Mark Ready</button>` : ''}
+                <button class="btn btn-outline h-8 text-xs text-destructive hover:bg-destructive hover:text-white" onclick="deletePost('${p.id}')">Delete</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+      lucide.createIcons();
+    }
+
+    async function viewPost(postId) {
+      const d = await api(`/api/sites/${currentSiteId}/posts/${postId}`);
+      if (!d.post) return showToast('Post not found', true);
+      const p = d.post;
+      document.getElementById('detail-content').innerHTML = `
+        <div class="flex items-center gap-3 mb-6">
+          <span class="badge ${p.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">${p.status === 'published' ? 'Ready' : 'Draft'}</span>
+          ${p.status === 'draft' ? `<button class="btn btn-success h-8 text-xs" onclick="publishPost('${p.id}');document.getElementById('post-detail').classList.add('hidden')">Mark Ready</button>` : ''}
+        </div>
+        <h2 class="text-3xl font-bold mb-2">${p.title}</h2>
+        <div class="flex flex-wrap gap-4 text-sm text-muted-foreground mb-6 pb-4 border-b">
+          <span>SEO Score: <strong>${p.seoScore?.overall || '-'}/100</strong></span>
+          <span>Words: <strong>${p.wordCount}</strong></span>
+          <span>Category: <strong>${p.category || '-'}</strong></span>
+        </div>
+        ${p.metaTitle ? `<div class="p-3 bg-muted/50 rounded-md mb-6 text-xs space-y-1"><div><span class="text-muted-foreground">SEO Title:</span> ${p.metaTitle}</div><div><span class="text-muted-foreground">Meta Desc:</span> ${p.metaDescription||''}</div><div><span class="text-muted-foreground">Slug:</span> /${p.slug||''}</div></div>` : ''}
+        <style>.blog-content h1{font-size:1.8rem;font-weight:700;margin:1.5rem 0 0.5rem}.blog-content h2{font-size:1.4rem;font-weight:700;margin:1.8rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #eee}.blog-content h3{font-size:1.15rem;font-weight:600;margin:1.2rem 0 0.4rem}.blog-content p{margin:0.6rem 0;line-height:1.75}.blog-content ul,.blog-content ol{margin:0.5rem 0;padding-left:1.5rem}.blog-content li{margin:0.3rem 0;line-height:1.6}.blog-content ul{list-style:disc}.blog-content ol{list-style:decimal}.blog-content strong{font-weight:600}.blog-content blockquote{border-left:3px solid #ddd;padding-left:1rem;color:#666;margin:1rem 0}.blog-content hr{margin:1.5rem 0;border-color:#eee}</style>
+        <div class="blog-content max-w-none text-foreground">${p.content}</div>
+        ${p.tags?.length ? `<div class="mt-6 pt-4 border-t flex flex-wrap gap-1">${p.tags.map(t=>`<span class="badge bg-muted text-muted-foreground">${t}</span>`).join('')}</div>` : ''}
+      `;
+      document.getElementById('post-detail').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    async function publishPost(postId) {
+      const d = await api(`/api/sites/${currentSiteId}/posts/${postId}/publish`, { method: 'POST' });
+      if (d.error) return showToast(d.error, true);
+      showToast('✅ Post marked as ready! Use the widget embed or API to display it on your website.');
+      nav('posts');
+    }
+
+    async function deletePost(postId) {
+      if (!confirm('Delete this post permanently?')) return;
+      const d = await api(`/api/sites/${currentSiteId}/posts/${postId}`, { method: 'DELETE' });
+      if (d.error) return showToast(d.error, true);
+      showToast('Post deleted');
+      nav('posts');
+    }
+
+    // ── SITES ─────────────────────────────────────────────────
+
+    function renderSites(c) {
+      c.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div><h2 class="text-2xl font-bold tracking-tight">Sites</h2><p class="text-muted-foreground">Add any website and we'll auto-detect its niche, keywords & audience.</p></div>
+          <button class="btn btn-primary" onclick="showAddSite()"><i data-lucide="plus" class="w-4 h-4 mr-2"></i>Add Site</button>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          ${sites.map(s => `
+            <div class="card p-5 flex flex-col ${currentSiteId === s.id ? 'ring-2 ring-primary' : ''}">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1"><h3 class="font-bold text-lg">${s.name}</h3>${currentSiteId === s.id ? '<span class="badge bg-primary text-primary-foreground">Active</span>' : ''}</div>
+                <p class="text-xs text-muted-foreground">${s.url || 'No URL'}</p>
+                <p class="text-xs text-muted-foreground mt-1">${s.niche} · ${s.keywords?.length || 0} keywords · ${s.targetAudience}</p>
+              </div>
+              <div class="flex gap-2 mt-4">
+                <button class="btn ${currentSiteId === s.id ? 'btn-secondary' : 'btn-primary'} flex-1 h-9 text-xs" onclick="selSite('${s.id}')">${currentSiteId === s.id ? '✓ Selected' : 'Select'}</button>
+                <button class="btn btn-outline h-9 text-xs text-destructive" onclick="delSite('${s.id}')"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+          `).join('')}
+          ${sites.length === 0 ? '<div class="card p-8 text-center text-muted-foreground col-span-2">No sites yet. Click "Add Site" to get started!</div>' : ''}
+        </div>
+
+        <!-- Add Site Form -->
+        <div id="site-add-form" class="hidden card p-6 max-w-lg space-y-4">
+          <h3 class="font-bold text-lg">Add New Site</h3>
+          <div class="space-y-1"><label class="text-sm font-medium">Site Name *</label><input id="s-name" class="input" placeholder="BillingBee"></div>
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Website URL</label>
+            <input id="s-url" class="input" placeholder="https://billingbee.co">
+            <p class="help">🕷️ We'll crawl this URL to auto-detect niche, keywords, audience & features. Works with any website.</p>
+          </div>
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Niche <span class="text-muted-foreground">(auto-filled from URL)</span></label>
+            <input id="s-niche" class="input" placeholder="Will be auto-detected if URL is provided">
+          </div>
+          <div id="crawl-status" class="hidden p-3 bg-muted/50 rounded-md text-sm animate-pulse">
+            <p class="font-medium">🕷️ Analyzing website...</p>
+            <p class="text-xs text-muted-foreground mt-1">Crawling pages, extracting content, detecting niche & keywords. This takes 10-30 seconds.</p>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button class="btn btn-secondary" onclick="document.getElementById('site-add-form').classList.add('hidden')">Cancel</button>
+            <button class="btn btn-primary" id="add-site-btn" onclick="doAddSite()">Add & Analyze Site</button>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function showAddSite() { document.getElementById('site-add-form').classList.remove('hidden'); }
+    function selSite(id) { currentSiteId = id; localStorage.setItem('ab_site_id', id); updateHeader(); nav('sites'); }
+
+    async function doAddSite() {
+      const name = document.getElementById('s-name').value;
+      const url = document.getElementById('s-url').value;
+      const niche = document.getElementById('s-niche').value;
+      if (!name) return showToast('Site name is required', true);
+      const btn = document.getElementById('add-site-btn');
+      const status = document.getElementById('crawl-status');
+      btn.disabled = true;
+      if (url) { btn.innerText = 'Analyzing...'; status.classList.remove('hidden'); }
+      else { btn.innerText = 'Saving...'; }
+      const d = await api('/api/sites/register', { method: 'POST', body: { name, url, niche } });
+      btn.disabled = false; btn.innerText = 'Add & Analyze Site'; status.classList.add('hidden');
+      if (d.error) return showToast(d.error, true);
+      if (d.crawlResult) showToast(`✅ Site analyzed! Niche: ${d.site.niche} — ${d.site.keywords.length} keywords detected`);
+      else showToast('Site added!');
+      sites.push(d.site);
+      selSite(d.site.id);
+    }
+
+    async function delSite(id) {
+      if (!confirm('Delete this site and all its posts?')) return;
+      await api(`/api/sites/${id}`, { method: 'DELETE' });
+      sites = sites.filter(s => s.id !== id);
+      if (currentSiteId === id) { currentSiteId = sites[0]?.id || null; localStorage.setItem('ab_site_id', currentSiteId); updateHeader(); }
+      nav('sites');
+      showToast('Site deleted');
+    }
+
+    // ── SCHEDULE ──────────────────────────────────────────────
+
+    async function renderSchedule(c) {
+      if (!currentSiteId) return c.innerHTML = noSiteMsg;
+      const site = curSite();
+      let schedStatus = null;
+      try { const sd = await api('/api/schedules'); schedStatus = (sd.schedules||[]).find(x=>x.siteId===currentSiteId); } catch(e) {}
+
+      c.innerHTML = `
+        <div><h2 class="text-2xl font-bold tracking-tight">Auto-Posting Schedule</h2><p class="text-muted-foreground">Configure when blogs are generated automatically for <strong>${site?.name}</strong>.</p></div>
+
+        <div class="card p-6 max-w-2xl space-y-5">
+          <div class="p-4 bg-muted/30 rounded-md text-sm space-y-2">
+            <p class="font-semibold">How auto-posting works:</p>
+            <ul class="list-disc list-inside text-muted-foreground space-y-1">
+              <li>The system uses a <strong>cron schedule</strong> to auto-generate posts internally.</li>
+              <li>Posts are saved here in the dashboard (status: draft or published based on your setting).</li>
+              <li>To <strong>publish on your actual website</strong>, you'd connect a CMS webhook or use the widget embed script.</li>
+              <li>Default: <code>0 9 * * *</code> = every day at 9:00 AM UTC.</li>
+              <li>For 9 AM + 5 PM: use <code>0 9,17 * * *</code></li>
+            </ul>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Cron Expression</label>
+            <input id="sched-cron" class="input font-mono" value="${site?.schedule || '0 9 * * *'}">
+            <p class="help">Examples: <code>0 9 * * *</code> (daily 9AM) · <code>0 9,17 * * *</code> (9AM+5PM) · <code>0 9 * * 1-5</code> (weekdays only)</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label class="text-sm font-medium">Auto-Publish:</label>
+            <select id="sched-autopub" class="input w-40">
+              <option value="false" ${!site?.autoPublish?'selected':''}>Save as Draft</option>
+              <option value="true" ${site?.autoPublish?'selected':''}>Publish Immediately</option>
+            </select>
+            <p class="help">Draft = review before publishing. Auto-publish = goes live immediately.</p>
+          </div>
+
+          ${schedStatus ? `
+          <div class="p-3 rounded-md border text-sm">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="badge ${schedStatus.isRunning ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}">${schedStatus.isRunning ? '⏳ Running now' : '✅ Active'}</span>
+            </div>
+            ${schedStatus.lastRun ? `<p class="text-xs text-muted-foreground">Last run: ${new Date(schedStatus.lastRun).toLocaleString()}</p>` : '<p class="text-xs text-muted-foreground">Has not run yet</p>'}
+            ${schedStatus.lastError ? `<p class="text-xs text-destructive mt-1">Last error: ${schedStatus.lastError}</p>` : ''}
+          </div>` : ''}
+
+          <div class="flex gap-2 pt-2">
+            <button class="btn btn-primary" onclick="updateSched()">Save Schedule</button>
+            <button class="btn btn-destructive" onclick="stopSched()">Stop Schedule</button>
+          </div>
+        </div>
+
+        <div class="card p-6 max-w-2xl">
+          <h3 class="font-semibold mb-3">Publishing to Your Website</h3>
+          <div class="space-y-3 text-sm text-muted-foreground">
+            <p>Posts generated here need to be displayed on your website. Two options:</p>
+            <div class="p-3 bg-muted/30 rounded-md">
+              <p class="font-medium text-foreground mb-1">Option 1: Embed Widget (easiest)</p>
+              <p>Add this script to your website HTML:</p>
+              <code class="block mt-1 p-2 bg-muted rounded text-xs break-all">&lt;script src="${window.location.origin}/widget.js" data-site-id="${currentSiteId}"&gt;&lt;/script&gt;
+&lt;div id="auto-blog-widget"&gt;&lt;/div&gt;</code>
+            </div>
+            <div class="p-3 bg-muted/30 rounded-md">
+              <p class="font-medium text-foreground mb-1">Option 2: API Integration</p>
+              <p>Fetch posts via API and render them yourself:</p>
+              <code class="block mt-1 p-2 bg-muted rounded text-xs">GET ${window.location.origin}/api/widget/${currentSiteId}/posts</code>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function updateSched() {
+      const cron = document.getElementById('sched-cron').value;
+      const autoPublish = document.getElementById('sched-autopub').value === 'true';
+      const d = await api(`/api/sites/${currentSiteId}/schedule`, { method: 'PUT', body: { schedule: cron, autoPublish } });
+      if (d.error) return showToast(d.error, true);
+      // Update local site data
+      const s = curSite(); if (s) { s.schedule = cron; s.autoPublish = autoPublish; }
+      showToast('✅ Schedule updated!');
+      nav('schedule');
+    }
+
+    async function stopSched() {
+      const d = await api(`/api/sites/${currentSiteId}/schedule`, { method: 'PUT', body: { schedule: '' } });
+      if (d.error) return showToast(d.error, true);
+      const s = curSite(); if (s) s.schedule = '';
+      showToast('Schedule stopped');
+      nav('schedule');
+    }
+
+    // ── KNOWLEDGE BASE ────────────────────────────────────────
+
+    async function renderKnowledge(c) {
+      if (!currentSiteId) return c.innerHTML = noSiteMsg;
+      const site = curSite();
+      const d = await api(`/api/sites/${currentSiteId}/knowledge`);
+      const entries = d.entries || [];
+
+      c.innerHTML = `
+        <div><h2 class="text-2xl font-bold tracking-tight">Knowledge Base</h2><p class="text-muted-foreground">What the AI knows about <strong>${site?.name}</strong>. More knowledge = better blog posts.</p></div>
+
+        <div class="card p-5 max-w-2xl">
+          <div class="p-3 bg-muted/30 rounded-md text-sm text-muted-foreground mb-4">
+            <p><strong>How it works:</strong> Every blog post generates an embedding (vector). When writing a new post, the AI searches these embeddings to:</p>
+            <ul class="list-disc list-inside mt-1 space-y-1">
+              <li><strong>Avoid repetition</strong> — won't write the same topic twice</li>
+              <li><strong>Deepen mode</strong> — finds related topics to go deeper</li>
+              <li><strong>Explore mode</strong> — finds white space topics not yet covered</li>
+            </ul>
+          </div>
+
+          <h3 class="font-medium text-sm mb-2">Current Entries (${entries.length})</h3>
+          ${entries.length === 0 ? '<p class="text-sm text-muted-foreground">No knowledge entries yet. Add your first site with a URL, or generate a post to start building the knowledge base.</p>' : ''}
+          <div class="space-y-2">
+            ${entries.map(e => `
+              <div class="p-3 border rounded-md flex items-start justify-between">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="badge bg-muted text-muted-foreground">${e.type}</span>
+                    <span class="font-medium text-sm truncate">${e.title}</span>
+                  </div>
+                  <p class="text-xs text-muted-foreground mt-1 line-clamp-2">${e.summary || e.content?.slice(0,150) || ''}</p>
+                </div>
+                <button class="btn btn-outline h-7 text-xs text-destructive shrink-0 ml-2" onclick="delKnowledge('${e.id}')"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="card p-5 max-w-2xl">
+          <h3 class="font-medium mb-3">Add Custom Knowledge</h3>
+          <p class="text-xs text-muted-foreground mb-3">Teach the AI about your business, products, or guidelines.</p>
+          <div class="space-y-3">
+            <input id="k-title" class="input" placeholder="Title: e.g. 'BillingBee Pricing Plans'">
+            <textarea id="k-content" class="textarea min-h-[100px]" placeholder="Content: describe your product features, pricing, target audience, unique selling points..."></textarea>
+            <button class="btn btn-primary" onclick="addKnowledge()">Add to Knowledge Base</button>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    async function addKnowledge() {
+      const title = document.getElementById('k-title').value;
+      const content = document.getElementById('k-content').value;
+      if (!title || !content) return showToast('Title and content required', true);
+      const d = await api(`/api/sites/${currentSiteId}/knowledge`, { method: 'POST', body: { type: 'custom', title, content } });
+      if (d.error) return showToast(d.error, true);
+      showToast('✅ Knowledge added!');
+      nav('knowledge');
+    }
+
+    async function delKnowledge(entryId) {
+      if (!confirm('Delete this knowledge entry?')) return;
+      await api(`/api/sites/${currentSiteId}/knowledge/${entryId}`, { method: 'DELETE' });
+      showToast('Entry deleted');
+      nav('knowledge');
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+    init();
+  </script>
+</body>
+
+</html>
