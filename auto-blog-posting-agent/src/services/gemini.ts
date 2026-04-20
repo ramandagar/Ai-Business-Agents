@@ -4,8 +4,8 @@ import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 
 const API_KEY = process.env.GEMINI_API_KEY || '';
 const CONTENT_MODEL = process.env.GEMINI_CONTENT_MODEL || 'gemini-2.5-flash';
-const EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || 'text-embedding-001';
-const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.0-flash-preview-image-generation';
+const EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || 'gemini-embedding-001';
+const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image-preview';
 
 if (!API_KEY) {
   console.warn('GEMINI_API_KEY is not set. AI features will fail.');
@@ -112,12 +112,13 @@ export async function generateImage(
 export async function generateJSON<T>(
   systemPrompt: string,
   userPrompt: string,
+  maxTokens: number = 8192,
 ): Promise<T> {
   const jsonModel = new ChatGoogleGenerativeAI({
     model: CONTENT_MODEL,
     apiKey: API_KEY,
     temperature: 0.1,
-    maxOutputTokens: 4096,
+    maxOutputTokens: maxTokens,
     json: true,
   });
 

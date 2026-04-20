@@ -179,6 +179,59 @@ app.post('/api/sites/:id/generate', asyncHandler(async (req, res) => {
   res.json({ success: true, post });
 }));
 
+// SSE streaming endpoint for blog generation
+app.post('/api/sites/:id/generate/stream', asyncHandler(async (req, res) => {
+  const site = await loadSiteConfig(req.params.id);
+  if (!site) return res.status(404).json({ error: 'Site not found' });
+
+  if (!site.url && !site.systemPrompt && (!site.niche || site.niche === 'general')) {
+    return res.status(400).json({ error: 'Site not configured' });
+  }
+
+  const request: GenerationRequest = {
+    siteId: req.params.id,
+    topic: req.body.topic,
+    blogType: req.body.blogType,
+    includeImages: req.body.includeImages,
+    customPrompt: req.body.customPrompt,
+    exploreDifferent: req.body.exploreDifferent ?? false,
+  };
+
+  console.log(`SSE blog generation triggered for "${site.name}"`);
+
+  // SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const sendSSE = (event: string, data: any) => {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  const onProgress = (stage: string, message: string, step: number, total: number) => {
+    sendSSE('progress', { stage, message, step, total });
+  };
+
+  try {
+    const post = await generateBlogPostGraph(request, onProgress);
+    // Send lightweight complete — don't embed base64 images in SSE
+    sendSSE('complete', {
+      id: post.id,
+      title: post.title,
+      slug: post.slug,
+      wordCount: post.wordCount,
+      status: post.status,
+      seoScore: post.seoScore,
+    });
+  } catch (err: any) {
+    sendSSE('error', { error: err.message });
+  } finally {
+    res.end();
+  }
+}));
+
 app.get('/api/sites/:id/topics', asyncHandler(async (req, res) => {
   const site = await loadSiteConfig(req.params.id);
   if (!site) return res.status(404).json({ error: 'Site not found' });

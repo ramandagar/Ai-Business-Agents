@@ -186,7 +186,8 @@ Return JSON:
   "metaTitle": "SEO title under 60 chars",
   "metaDescription": "compelling meta description under 160 chars",
   "slug": "clean-url-slug"
-}`
+}`,
+    16384
   );
 
   const schemaMarkup = JSON.stringify({

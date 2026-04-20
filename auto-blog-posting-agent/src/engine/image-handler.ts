@@ -46,11 +46,12 @@ export async function generateBlogImages(
   for (const placement of placements) {
     try {
       const { url, base64, alt } = await generateImage(placement.prompt, 896, 512);
+      const imageUrl = base64 ? `data:image/jpeg;base64,${base64}` : url;
 
       images.push({
         id: uuid(),
         prompt: placement.prompt,
-        url,
+        url: imageUrl,
         base64,
         alt,
         caption: placement.caption,
@@ -118,11 +119,12 @@ export async function generateFeaturedImage(
 
   try {
     const { url, base64, alt } = await generateImage(prompt, 1344, 704);
+    const imageUrl = base64 ? `data:image/jpeg;base64,${base64}` : url;
 
     return {
       id: uuid(),
       prompt,
-      url,
+      url: imageUrl,
       base64,
       alt,
       caption: title,

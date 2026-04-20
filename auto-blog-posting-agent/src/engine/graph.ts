@@ -23,9 +23,22 @@ import {
 import { loadSiteConfig, saveBlogPost } from '../services/data-store';
 import { buildSystemPrompt, markdownToHTML } from './generator';
 
+export type ProgressCallback = (stage: string, message: string, step: number, total: number) => void;
+
+const STAGES = [
+  { key: 'research', label: 'Researching topic...' },
+  { key: 'writing', label: 'Writing content...' },
+  { key: 'seo', label: 'Optimizing for SEO...' },
+  { key: 'links', label: 'Adding internal links...' },
+  { key: 'images', label: 'Generating images...' },
+  { key: 'finalize', label: 'Finalizing post...' },
+] as const;
+const TOTAL_STAGES = STAGES.length;
+
 const BlogGraphState = Annotation.Root({
   request: Annotation<GenerationRequest>,
   site: Annotation<SiteConfig>,
+  onProgress: Annotation<ProgressCallback | undefined>,
 
   topic: Annotation<TopicSuggestion>,
   selectedTitle: Annotation<string>,
@@ -60,8 +73,13 @@ const BlogGraphState = Annotation.Root({
 
 type BlogState = typeof BlogGraphState.State;
 
+function emitProgress(state: BlogState, stageIndex: number): void {
+  state.onProgress?.(STAGES[stageIndex].key, STAGES[stageIndex].label, stageIndex + 1, TOTAL_STAGES);
+}
+
 async function researchTopicNode(state: BlogState): Promise<Partial<BlogState>> {
   const { request, site } = state;
+  emitProgress(state, 0);
   const topicStart = Date.now();
 
   console.log(`\n[Graph] Research Topic for "${site.name}"...`);
@@ -109,7 +127,7 @@ async function researchTopicNode(state: BlogState): Promise<Partial<BlogState>> 
 
 async function writeContentNode(state: BlogState): Promise<Partial<BlogState>> {
   const { site, topic, selectedTitle, ragContext, previousPostSummaries, request } = state;
-
+  emitProgress(state, 1);
   console.log(`\n[Graph] Writing content...`);
 
   const systemPrompt = buildSystemPrompt(site);
@@ -182,6 +200,7 @@ ${request.customPrompt ? `\n## Custom Instructions from user:\n${request.customP
 async function optimizeSEONode(state: BlogState): Promise<Partial<BlogState>> {
   const { rawContent, optimizedContent, topic, site, seoAttempts } = state;
   const seoStart = Date.now();
+  emitProgress(state, 2);
   const attempt = (seoAttempts || 0) + 1;
 
   console.log(`\n[Graph] SEO Optimization (attempt ${attempt})...`);
@@ -221,7 +240,7 @@ async function optimizeSEONode(state: BlogState): Promise<Partial<BlogState>> {
 
 async function internalLinksNode(state: BlogState): Promise<Partial<BlogState>> {
   const { optimizedContent, site } = state;
-
+  emitProgress(state, 3);
   if (!site.internalLinking) {
     console.log(`\n[Graph] Internal linking disabled — skipping.`);
     return { internalLinks: [] };
@@ -236,6 +255,7 @@ async function internalLinksNode(state: BlogState): Promise<Partial<BlogState>> 
 
 async function generateImagesNode(state: BlogState): Promise<Partial<BlogState>> {
   const { selectedTitle, site } = state;
+  emitProgress(state, 4);
   const imgStart = Date.now();
 
   console.log(`\n[Graph] Generating hero image...`);
@@ -250,12 +270,14 @@ async function generateImagesNode(state: BlogState): Promise<Partial<BlogState>>
   };
 }
 
-async function skipImagesNode(_state: BlogState): Promise<Partial<BlogState>> {
+async function skipImagesNode(state: BlogState): Promise<Partial<BlogState>> {
+  state.onProgress?.('images', 'Skipping images...', 5, TOTAL_STAGES);
   console.log(`\n[Graph] Images skipped.`);
   return { images: [], imageTime: 0 };
 }
 
 async function finalizeNode(state: BlogState): Promise<Partial<BlogState>> {
+  emitProgress(state, 5);
   const {
     site, request, selectedTitle, topic, optimizedContent, metaTitle,
     metaDescription, slug, schemaMarkup, seoScore, internalLinks,
@@ -392,7 +414,10 @@ export function getBlogGraph() {
   return _compiledGraph;
 }
 
-export async function generateBlogPostGraph(request: GenerationRequest): Promise<BlogPost> {
+export async function generateBlogPostGraph(
+  request: GenerationRequest,
+  onProgress?: ProgressCallback,
+): Promise<BlogPost> {
   const site = await loadSiteConfig(request.siteId);
   if (!site) throw new Error(`Site not found: ${request.siteId}`);
 
@@ -403,6 +428,7 @@ export async function generateBlogPostGraph(request: GenerationRequest): Promise
   const result = await graph.invoke({
     request,
     site,
+    onProgress,
     startTime: Date.now(),
     seoAttempts: 0,
     internalLinks: [],
