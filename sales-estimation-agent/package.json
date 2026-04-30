@@ -6,7 +6,9 @@
     "dev:blog": "cd auto-blog-agent && npm run dev",
     "seed:blog": "cd auto-blog-agent && npx ts-node scripts/seed-demo.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "seed": "npx ts-node scripts/seed-supabase.ts",
+    "add-project": "npx ts-node scripts/add-project.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1017.0",
@@ -14,6 +16,7 @@
     "@langchain/core": "^1.1.36",
     "@langchain/google-genai": "^2.1.27",
     "@langchain/langgraph": "^1.2.6",
+    "@supabase/supabase-js": "^2.104.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

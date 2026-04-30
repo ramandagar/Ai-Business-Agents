@@ -155,6 +155,28 @@ function extractSlots(messages: BaseMessage[]): any[] | null {
   return null;
 }
 
+function extractProjects(messages: BaseMessage[], aiReply: string): any[] | null {
+  // Show project cards when Amit mentions projects/case studies in his response
+  const triggerWords = ['project', 'built', 'similar project', 'we\'ve done', 'we built', 'past project', 'case study', 'portfolio', 'our work', 'we delivered', 'we created', 'we developed'];
+  const lower = aiReply.toLowerCase();
+  const shouldShow = triggerWords.some(k => lower.includes(k));
+  if (!shouldShow) return null;
+
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg._getType() === 'tool') {
+      try {
+        const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+        const parsed = JSON.parse(content);
+        if (parsed.projects && Array.isArray(parsed.projects) && parsed.projects.length > 0) {
+          return parsed.projects;
+        }
+      } catch (err) { }
+    }
+  }
+  return null;
+}
+
 // ── Health ─────────────────────────────────────────────────────────
 app.get('/health', (_, res) => res.json({ ok: true, business: pricing.businessName, tagline: pricing.tagline }));
 
@@ -216,12 +238,13 @@ app.post('/api/chat', async (req, res) => {
     // Extract structured data
     const estimate = extractEstimate(newMessages);
     const booking = extractBooking(newMessages);
+    const projects = extractProjects(newMessages, reply);
     let slots = extractSlots(newMessages);
 
     // ══════════════════════════════════════════════════════════════
     // AUTO-SLOTS: Safety Net (Estimate or AI Hallucination)
     // ══════════════════════════════════════════════════════════════
-    const isDemandingSlots = reply.toLowerCase().includes('card') || reply.toLowerCase().includes('choose a time') || reply.toLowerCase().includes('pick a time') || reply.toLowerCase().includes('discuss the project') || reply.toLowerCase().includes('slot');
+    const isDemandingSlots = reply.toLowerCase().includes('time slot') || reply.toLowerCase().includes('choose a time') || reply.toLowerCase().includes('pick a time') || reply.toLowerCase().includes('schedule a call') || reply.toLowerCase().includes('book a call') || reply.toLowerCase().includes('discovery call');
 
     if ((estimate || isDemandingSlots) && (!slots || slots.length === 0)) {
       try {
@@ -239,6 +262,7 @@ app.post('/api/chat', async (req, res) => {
       slots: slots && slots.length > 0 ? slots : null,
       estimate,
       booking,
+      projects,
     });
   } catch (err: any) {
     console.error('Chat error:', err?.message, err?.stack?.slice(0, 300));
@@ -267,7 +291,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     if (mimetype === 'application/pdf') {
       doc = await kb.addPDF(originalname, buffer);
     } else {
-      doc = kb.addText(originalname, buffer.toString('utf-8'));
+      doc = await kb.addTextDoc(originalname, buffer.toString('utf-8'));
     }
 
     return res.json({ success: true, document: { id: doc.id, filename: doc.filename, chunks: doc.chunks.length } });
@@ -280,7 +304,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 // ── Knowledge Base ─────────────────────────────────────────────────
 app.get('/api/knowledge', (_, res) => res.json({ documents: kb.getDocuments() }));
 app.delete('/api/knowledge/:id', (req, res) => {
-  const ok = kb.removeDocument(req.params.id);
+  const ok = kb.removeDocument();
   return res.json({ success: ok });
 });
 

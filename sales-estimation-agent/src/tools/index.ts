@@ -9,11 +9,16 @@ import { z } from 'zod';
 import pricing from '../../pricing.json';
 import { kb } from '../services/knowledgeBase';
 
-// ── Tool 1: Search Knowledge Base ──────────────────────────────────────
+// ── Tool 1: Search Knowledge Base (Supabase pgvector RAG) ──────────────
 export const searchKB = tool(
   async ({ query }) => {
-    const results = kb.search(query);
-    if (results.length === 0) {
+    // Semantic search via Supabase
+    const [allResults, projects] = await Promise.all([
+      kb.searchAll(query),
+      kb.searchProjects(query, 3),
+    ]);
+
+    if (allResults.length === 0 && projects.length === 0) {
       return JSON.stringify({
         results: [],
         note: 'No exact matches. Here are all services:',
@@ -23,15 +28,31 @@ export const searchKB = tool(
         })),
       });
     }
-    return JSON.stringify({
-      results: results.map(r => r.text),
-      sources: [...new Set(results.map(r => r.source))],
-    });
+
+    const response: any = {
+      results: allResults.map(r => r.text),
+      sources: [...new Set(allResults.map(r => r.source))],
+    };
+
+    // Add portfolio projects with URLs for credibility
+    if (projects.length > 0) {
+      response.projects = projects.map(p => ({
+        name: p.name,
+        description: p.description,
+        cost: p.cost,
+        timeline: p.timeline,
+        impact: p.impact,
+        url: p.live_url || null,
+        category: p.category,
+      }));
+    }
+
+    return JSON.stringify(response);
   },
   {
     name: 'search_knowledge_base',
-    description: 'Search services, pricing, policies, and uploaded docs. ALWAYS call before building an estimate.',
-    schema: z.object({ query: z.string().describe('Client requirement') }),
+    description: 'Search services, pricing, past projects, and docs using semantic search. ALWAYS call before building an estimate. Also returns matching portfolio projects with live URLs for credibility.',
+    schema: z.object({ query: z.string().describe('Client requirement in detail') }),
   }
 );
 

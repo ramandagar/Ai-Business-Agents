@@ -581,6 +581,77 @@
 
     .booking-link:hover { opacity: 0.85; }
 
+    /* ── Project Card ─────────────────────────────────────────── */
+    .project-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+      max-width: 320px;
+    }
+    .project-card {
+      background: var(--primary-soft);
+      border: 1px solid var(--primary-border);
+      border-radius: var(--radius);
+      padding: 12px;
+      cursor: default;
+      transition: all 0.15s;
+      text-decoration: none;
+      display: block;
+      animation: msgIn 0.25s ease;
+    }
+    .project-card:hover {
+      background: rgba(37, 99, 235, 0.1);
+      border-color: rgba(37, 99, 235, 0.3);
+    }
+    .project-card.clickable {
+      cursor: pointer;
+    }
+    .project-card.clickable:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+    }
+    .pc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .pc-name {
+      font-weight: 600;
+      font-size: 12.5px;
+      color: var(--primary-text);
+    }
+    .pc-cost {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text3);
+      white-space: nowrap;
+    }
+    .pc-desc {
+      font-size: 11.5px;
+      color: var(--text3);
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+    .pc-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pc-impact {
+      font-size: 10.5px;
+      color: var(--green-text);
+      font-weight: 500;
+    }
+    .pc-link {
+      font-size: 10.5px;
+      color: var(--primary-text);
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .pc-link:hover { text-decoration: underline; }
+
     /* ── Input Area ───────────────────────────────────────────── */
     .input-area {
       padding: 8px 12px 12px;
@@ -627,6 +698,38 @@
     }
 
     .input-attach svg { width: 16px; height: 16px; }
+
+    .input-mic {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .input-mic:hover {
+      background: var(--surface3);
+      color: var(--text3);
+    }
+
+    .input-mic.recording {
+      color: #ef4444;
+      animation: pulse 1.2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .input-mic svg { width: 16px; height: 16px; }
 
     .input-text {
       flex: 1;
@@ -741,19 +844,19 @@
       <div class="welcome" id="welcome">
         <div class="welcome-icon">A</div>
         <h2>Hi, I'm Amit</h2>
-        <p>I'm from CWS Technology. Tell me about your project and I'll get you an estimate, or upload a requirements doc.</p>
+        <p>I can help you plan and estimate your project. What are you looking to do?</p>
         <div class="quick-actions">
-          <button class="quick-action" onclick="send('I need a website for my business')">
-            <span class="quick-action-icon">W</span> Business Website
+          <button class="quick-action" onclick="send('Build a new product')">
+            <span class="quick-action-icon">+</span> Build a new product
           </button>
-          <button class="quick-action" onclick="send('How much does a mobile app cost?')">
-            <span class="quick-action-icon">M</span> Mobile App
+          <button class="quick-action" onclick="send('Improve an existing system')">
+            <span class="quick-action-icon">^</span> Improve existing system
           </button>
-          <button class="quick-action" onclick="send('I need an e-commerce store')">
-            <span class="quick-action-icon">E</span> E-commerce Store
+          <button class="quick-action" onclick="send('Fix an issue')">
+            <span class="quick-action-icon">!</span> Fix an issue
           </button>
-          <button class="quick-action" onclick="send('Schedule a discovery call')">
-            <span class="quick-action-icon">C</span> Book a Call
+          <button class="quick-action" onclick="send('Just exploring an idea')">
+            <span class="quick-action-icon">~</span> Exploring an idea
           </button>
         </div>
       </div>
@@ -768,6 +871,14 @@
           </svg>
         </button>
         <textarea class="input-text" id="input" placeholder="Describe your project..." rows="1" aria-label="Message input"></textarea>
+        <button class="input-mic" onclick="toggleVoice()" id="mic-btn" title="Voice input" aria-label="Voice input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
         <button class="input-send" onclick="send()" id="send-btn" aria-label="Send message">
           <svg viewBox="0 0 24 24">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -977,6 +1088,9 @@
           'Timeline: ' + (est.timeline || 'TBD') + '<br>' +
           'Valid for ' + (est.validDays || 30) + ' days<br>' +
           (est.policies?.payment || '50% advance, 50% on delivery') +
+        '</div>' +
+        '<div style="margin-top:10px;padding:8px 10px;background:rgba(0,0,0,0.03);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--text3);line-height:1.5">' +
+          'Please note: This is a high-level estimate, not the final one. The final estimate will be provided after a discussion with our Associate.' +
         '</div>';
 
       container.appendChild(card);
@@ -1003,6 +1117,43 @@
 
       container.appendChild(card);
       scrollBottom();
+    }
+
+    // ── Project Cards ────────────────────────────────────────────
+    function renderProjects(projects, container) {
+      if (!projects || !projects.length) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'project-cards';
+
+      projects.forEach(p => {
+        const card = document.createElement('div');
+        const hasUrl = !!p.url;
+        card.className = 'project-card' + (hasUrl ? ' clickable' : '');
+
+        let html = '<div class="pc-header"><div class="pc-name">' + esc(p.name) + '</div>';
+        if (p.cost) html += '<div class="pc-cost">INR ' + Number(p.cost).toLocaleString() + '</div>';
+        html += '</div>';
+
+        if (p.description || p.scope) html += '<div class="pc-desc">' + esc(p.description || p.scope || '') + '</div>';
+
+        html += '<div class="pc-footer">';
+        if (p.impact) html += '<div class="pc-impact">' + esc(p.impact) + '</div>';
+        if (hasUrl) html += '<a class="pc-link" href="' + esc(p.url) + '" target="_blank" rel="noopener">View Project &rarr;</a>';
+        html += '</div>';
+
+        card.innerHTML = html;
+        if (hasUrl) card.onclick = () => window.open(p.url, '_blank');
+        wrap.appendChild(card);
+      });
+
+      container.appendChild(wrap);
+      scrollBottom();
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
     }
 
     // ── Toast ───────────────────────────────────────────────────
@@ -1041,6 +1192,7 @@
         if (data.reply) {
           const body = addMsg('agent', data.reply);
           if (data.estimate) renderEstimate(data.estimate, body);
+          if (data.projects && data.projects.length > 0) renderProjects(data.projects, body);
           if (data.slots && data.slots.length > 0) renderSlots(data.slots, body);
           if (data.booking && data.booking.success) renderBooking(data.booking, body);
         }
@@ -1096,16 +1248,16 @@
       welcome.innerHTML =
         '<div class="welcome-icon">A</div>' +
         '<h2>Hi, I\'m Amit</h2>' +
-        '<p>I\'m from CWS Technology. Tell me about your project and I\'ll get you an estimate, or upload a requirements doc.</p>' +
+        '<p>I can help you plan and estimate your project. What are you looking to do?</p>' +
         '<div class="quick-actions">' +
-          '<button class="quick-action" onclick="send(\'I need a website for my business\')">' +
-            '<span class="quick-action-icon">W</span> Business Website</button>' +
-          '<button class="quick-action" onclick="send(\'How much does a mobile app cost?\')">' +
-            '<span class="quick-action-icon">M</span> Mobile App</button>' +
-          '<button class="quick-action" onclick="send(\'I need an e-commerce store\')">' +
-            '<span class="quick-action-icon">E</span> E-commerce Store</button>' +
-          '<button class="quick-action" onclick="send(\'Schedule a discovery call\')">' +
-            '<span class="quick-action-icon">C</span> Book a Call</button>' +
+          '<button class="quick-action" onclick="send(\'Build a new product\')">' +
+            '<span class="quick-action-icon">+</span> Build a new product</button>' +
+          '<button class="quick-action" onclick="send(\'Improve an existing system\')">' +
+            '<span class="quick-action-icon">^</span> Improve existing system</button>' +
+          '<button class="quick-action" onclick="send(\'Fix an issue\')">' +
+            '<span class="quick-action-icon">!</span> Fix an issue</button>' +
+          '<button class="quick-action" onclick="send(\'Just exploring an idea\')">' +
+            '<span class="quick-action-icon">~</span> Exploring an idea</button>' +
         '</div>';
 
       messages.appendChild(welcome);
@@ -1120,6 +1272,88 @@
       input.style.height = 'auto';
       input.style.height = Math.min(input.scrollHeight, 100) + 'px';
     });
+
+    // ── Voice Input (Web Speech API) ─────────────────────────────
+    let recognition = null;
+    let isRecording = false;
+
+    function toggleVoice() {
+      if (isRecording) {
+        stopVoice();
+      } else {
+        startVoice();
+      }
+    }
+
+    function startVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showToast('Voice input not supported in this browser', 3000);
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-IN'; // Supports Hindi, English, Hinglish well
+
+      // Try to detect language from existing conversation
+      const msgs = document.querySelectorAll('.msg-bubble');
+      if (msgs.length > 0) {
+        // Keep en-IN as it handles Hindi+English mix best for Indian market
+        recognition.lang = 'en-IN';
+      }
+
+      isRecording = true;
+      const micBtn = document.getElementById('mic-btn');
+      micBtn.classList.add('recording');
+      input.placeholder = 'Listening...';
+
+      let finalTranscript = '';
+
+      recognition.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        input.value = finalTranscript + interim;
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+      };
+
+      recognition.onend = () => {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        input.placeholder = 'Describe your project...';
+        if (finalTranscript.trim()) {
+          input.focus();
+        }
+      };
+
+      recognition.onerror = (event) => {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        input.placeholder = 'Describe your project...';
+        if (event.error !== 'no-speech') {
+          showToast('Voice error: ' + event.error, 3000);
+        }
+      };
+
+      recognition.start();
+    }
+
+    function stopVoice() {
+      if (recognition) {
+        recognition.stop();
+      }
+      isRecording = false;
+      document.getElementById('mic-btn').classList.remove('recording');
+      input.placeholder = 'Describe your project...';
+    }
   </script>
 </body>
 

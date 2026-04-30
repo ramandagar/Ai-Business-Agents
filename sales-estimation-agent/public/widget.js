@@ -258,6 +258,27 @@
     scroll();
   }
 
+  function renderProjectsW(projects) {
+    if (!projects || !projects.length) return;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-top:6px;max-width:85%';
+    projects.forEach(function(p) {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);border-radius:10px;padding:10px;cursor:' + (p.url ? 'pointer' : 'default') + ';transition:all 0.15s';
+      let html = '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><div style="font-size:12px;font-weight:600;color:#2563eb">' + (p.name||'') + '</div>';
+      if (p.cost) html += '<div style="font-size:10px;color:#71717a">INR ' + Number(p.cost).toLocaleString() + '</div>';
+      html += '</div>';
+      if (p.description || p.scope) html += '<div style="font-size:11px;color:#71717a;line-height:1.4">' + (p.description || p.scope || '') + '</div>';
+      if (p.impact) html += '<div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:500">' + p.impact + '</div>';
+      if (p.url) html += '<div style="font-size:10px;color:#2563eb;margin-top:3px">View Project &rarr;</div>';
+      card.innerHTML = html;
+      if (p.url) card.onclick = function() { window.open(p.url, '_blank'); };
+      wrap.appendChild(card);
+    });
+    msgs.appendChild(wrap);
+    scroll();
+  }
+
   function showTyping() {
     const d = document.createElement('div');
     d.id = '_sa_t'; d.className = 'wt';
@@ -283,6 +304,7 @@
       const d = await r.json();
       hideTyping();
       if (d.reply) addMsg('agent', d.reply);
+      if (d.projects && d.projects.length > 0) renderProjectsW(d.projects);
       if (d.slots && d.slots.length > 0) renderSlotsW(d.slots);
     } catch {
       hideTyping();
