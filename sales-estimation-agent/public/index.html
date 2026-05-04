@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AI Sales Agent</title>
+  <title>CWS Technology — AI Sales Agent</title>
   <meta name="description" content="Get instant project estimates and schedule discovery calls.">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *,
     *::before,
@@ -17,37 +17,43 @@
     }
 
     :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --primary-soft: rgba(37, 99, 235, 0.06);
-      --primary-border: rgba(37, 99, 235, 0.2);
-      --primary-text: #2563eb;
-      --green: #16a34a;
-      --green-soft: rgba(22, 163, 74, 0.06);
-      --green-border: rgba(22, 163, 74, 0.15);
-      --green-text: #16a34a;
-      --amber-soft: rgba(245, 158, 11, 0.06);
-      --amber-border: rgba(245, 158, 11, 0.15);
-      --amber-text: #d97706;
-      --bg: #ffffff;
-      --bg-header: rgba(255, 255, 255, 0.85);
-      --surface: #f9fafb;
-      --surface2: #f4f4f5;
-      --surface3: #e4e4e7;
-      --surface4: #d4d4d8;
-      --border: rgba(0, 0, 0, 0.08);
-      --border-hover: rgba(0, 0, 0, 0.14);
-      --text: #09090b;
-      --text2: #3f3f46;
-      --text3: #71717a;
-      --muted: #a1a1aa;
+      /* CWS Brand Colors */
+      --cws-dark: #0D2665;
+      --cws-navy: #112D73;
+      --cws-blue: #2C64E7;
+      --cws-blue-hover: #1A4FC2;
+      --cws-blue-glow: rgba(44, 100, 231, 0.25);
+      --cws-blue-soft: rgba(44, 100, 231, 0.08);
+      --cws-blue-border: rgba(44, 100, 231, 0.2);
+      --cws-purple: #5750FF;
+      --cws-green: #3CEDB7;
+      --cws-green-text: #3CEDB7;
+      --cws-green-soft: rgba(60, 237, 183, 0.08);
+      --cws-green-border: rgba(60, 237, 183, 0.2);
+      --cws-orange: #ff6900;
+      --cws-gray: #32373c;
+      --cws-gray-light: #1a1d24;
+      /* Surfaces */
+      --bg: #0a0c12;
+      --bg-header: rgba(10, 12, 18, 0.92);
+      --surface: #12151e;
+      --surface2: #181c28;
+      --surface3: #1e2233;
+      --surface4: #252a3a;
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --text: #ffffff;
+      --text2: #c8ccd8;
+      --text3: #8b90a0;
+      --muted: #5a5f72;
       --radius-sm: 8px;
       --radius: 12px;
       --radius-lg: 16px;
       --radius-xl: 20px;
     }
 
-    html, body {
+    html,
+    body {
       height: 100%;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -73,6 +79,7 @@
       position: relative;
       border-left: 1px solid var(--border);
       border-right: 1px solid var(--border);
+      background: var(--bg);
     }
 
     /* ── Header ───────────────────────────────────────────────── */
@@ -80,24 +87,27 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 12px 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
-      backdrop-filter: blur(16px);
-      background: var(--bg-header);
+      backdrop-filter: blur(20px);
+      background: linear-gradient(135deg, rgba(13, 38, 101, 0.6), rgba(17, 45, 115, 0.4));
       z-index: 10;
     }
 
     .header-avatar {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: var(--radius);
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--cws-blue), var(--cws-purple));
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 17px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
       flex-shrink: 0;
+      box-shadow: 0 2px 8px var(--cws-blue-glow);
     }
 
     .header-info {
@@ -112,6 +122,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      color: #fff;
     }
 
     .header-status {
@@ -127,8 +138,9 @@
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: var(--green);
+      background: var(--cws-green);
       flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(60, 237, 183, 0.5);
     }
 
     .agent-badge {
@@ -136,17 +148,29 @@
       font-weight: 600;
       padding: 2px 8px;
       border-radius: 6px;
-      background: var(--primary-soft);
-      border: 1px solid var(--primary-border);
-      color: var(--primary-text);
+      background: var(--cws-blue-soft);
+      border: 1px solid var(--cws-blue-border);
+      color: var(--cws-blue);
       letter-spacing: 0.03em;
       text-transform: uppercase;
       display: none;
     }
 
-    .agent-badge.visible { display: inline-block; }
-    .agent-badge.negotiation { background: var(--amber-soft); border-color: var(--amber-border); color: var(--amber-text); }
-    .agent-badge.booking { background: var(--green-soft); border-color: var(--green-border); color: var(--green-text); }
+    .agent-badge.visible {
+      display: inline-block;
+    }
+
+    .agent-badge.negotiation {
+      background: rgba(255, 105, 0, 0.08);
+      border-color: rgba(255, 105, 0, 0.2);
+      color: var(--cws-orange);
+    }
+
+    .agent-badge.booking {
+      background: var(--cws-green-soft);
+      border-color: var(--cws-green-border);
+      color: var(--cws-green-text);
+    }
 
     .header-actions {
       display: flex;
@@ -159,7 +183,7 @@
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: transparent;
-      color: var(--muted);
+      color: var(--text3);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -169,7 +193,7 @@
 
     .icon-btn:hover {
       background: var(--surface3);
-      color: var(--text2);
+      color: var(--text);
       border-color: var(--border-hover);
     }
 
@@ -192,10 +216,17 @@
       gap: 4px;
       scroll-behavior: smooth;
       overscroll-behavior: contain;
+      background: var(--bg);
     }
 
-    .messages::-webkit-scrollbar { width: 3px; }
-    .messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 3px; }
+    .messages::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+    }
 
     /* ── Message Rows ─────────────────────────────────────────── */
     .msg-group {
@@ -206,8 +237,15 @@
     }
 
     @keyframes msgIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .msg-group.user {
@@ -221,19 +259,22 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 11px;
+      font-weight: 600;
       flex-shrink: 0;
       margin-top: 2px;
     }
 
     .msg-group.agent .msg-avatar {
-      background: var(--surface3);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--cws-blue), var(--cws-purple));
+      color: #fff;
+      box-shadow: 0 2px 6px var(--cws-blue-glow);
     }
 
     .msg-group.user .msg-avatar {
       background: var(--surface3);
       border: 1px solid var(--border);
+      color: var(--text3);
     }
 
     .msg-body {
@@ -264,32 +305,59 @@
     }
 
     .msg-group.user .msg-bubble {
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--cws-blue), #3570F5);
       color: #fff;
       border-top-right-radius: 4px;
     }
 
-    .msg-bubble strong { font-weight: 600; color: #09090b; }
-    .msg-bubble p { margin: 2px 0; }
-    .msg-bubble p:first-child { margin-top: 0; }
-    .msg-bubble p:last-child { margin-bottom: 0; }
-    .msg-bubble ul, .msg-bubble ol { padding-left: 16px; margin: 4px 0; }
-    .msg-bubble li { margin: 2px 0; }
+    .msg-bubble strong {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .msg-bubble p {
+      margin: 2px 0;
+    }
+
+    .msg-bubble p:first-child {
+      margin-top: 0;
+    }
+
+    .msg-bubble p:last-child {
+      margin-bottom: 0;
+    }
+
+    .msg-bubble ul,
+    .msg-bubble ol {
+      padding-left: 16px;
+      margin: 4px 0;
+    }
+
+    .msg-bubble li {
+      margin: 2px 0;
+    }
+
     .msg-bubble code {
-      background: rgba(0,0,0,0.06);
+      background: rgba(255, 255, 255, 0.06);
       padding: 1px 5px;
       border-radius: 4px;
       font-size: 12px;
       font-family: 'SF Mono', 'Fira Code', monospace;
+      color: var(--cws-green);
     }
+
     .msg-bubble a {
-      color: var(--primary);
+      color: var(--cws-blue);
       text-decoration: underline;
       text-underline-offset: 2px;
     }
-    .msg-bubble a:hover { opacity: 0.8; }
+
+    .msg-bubble a:hover {
+      opacity: 0.8;
+    }
+
     .msg-bubble blockquote {
-      border-left: 2px solid var(--primary-border);
+      border-left: 2px solid var(--cws-blue-border);
       padding-left: 10px;
       margin: 6px 0;
       color: var(--text3);
@@ -303,7 +371,9 @@
       transition: opacity 0.15s;
     }
 
-    .msg-group:hover .msg-time { opacity: 1; }
+    .msg-group:hover .msg-time {
+      opacity: 1;
+    }
 
     /* ── Typing Indicator ─────────────────────────────────────── */
     .typing-indicator {
@@ -328,16 +398,31 @@
       width: 5px;
       height: 5px;
       border-radius: 50%;
-      background: var(--muted);
+      background: var(--cws-blue);
       animation: bounce 1.4s infinite ease-in-out;
     }
 
-    .typing-dot:nth-child(2) { animation-delay: 0.16s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.32s; }
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.16s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.32s;
+    }
 
     @keyframes bounce {
-      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-      30% { transform: translateY(-5px); opacity: 1; }
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0);
+        opacity: 0.4;
+      }
+
+      30% {
+        transform: translateY(-5px);
+        opacity: 1;
+      }
     }
 
     /* ── Welcome Screen ───────────────────────────────────────── */
@@ -347,27 +432,30 @@
       align-items: center;
       justify-content: center;
       flex: 1;
-      gap: 12px;
+      gap: 14px;
       padding: 32px 20px;
       text-align: center;
     }
 
     .welcome-icon {
-      width: 52px;
-      height: 52px;
+      width: 56px;
+      height: 56px;
       border-radius: var(--radius-lg);
-      background: var(--primary-soft);
-      border: 1px solid var(--primary-border);
+      background: linear-gradient(135deg, var(--cws-blue), var(--cws-purple));
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 24px;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 4px 20px var(--cws-blue-glow);
     }
 
     .welcome h2 {
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 20px;
+      font-weight: 700;
       letter-spacing: -0.02em;
+      color: #fff;
     }
 
     .welcome p {
@@ -387,14 +475,14 @@
     }
 
     .quick-action {
-      padding: 10px 12px;
+      padding: 12px 14px;
       border-radius: var(--radius);
       border: 1px solid var(--border);
       background: var(--surface2);
       color: var(--text2);
       font-size: 12.5px;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.2s ease;
       text-align: left;
       display: flex;
       align-items: center;
@@ -404,15 +492,27 @@
 
     .quick-action:hover {
       background: var(--surface3);
-      border-color: var(--border-hover);
+      border-color: var(--cws-blue-border);
       color: var(--text);
+      transform: translateY(-1px);
     }
 
-    .quick-action:active { transform: scale(0.98); }
+    .quick-action:active {
+      transform: scale(0.98);
+    }
 
     .quick-action-icon {
-      font-size: 16px;
+      font-size: 14px;
       flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: var(--cws-blue-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cws-blue);
+      font-weight: 700;
     }
 
     /* ── Slot Cards ───────────────────────────────────────────── */
@@ -429,29 +529,33 @@
       align-items: center;
       gap: 10px;
       padding: 10px 12px;
-      background: var(--primary-soft);
-      border: 1px solid var(--primary-border);
+      background: var(--cws-blue-soft);
+      border: 1px solid var(--cws-blue-border);
       border-radius: var(--radius);
       cursor: pointer;
       transition: all 0.15s ease;
     }
 
     .slot-item:hover {
-      background: rgba(37, 99, 235, 0.12);
-      border-color: rgba(37, 99, 235, 0.3);
+      background: rgba(44, 100, 231, 0.15);
+      border-color: rgba(44, 100, 231, 0.4);
     }
 
-    .slot-item:active { transform: scale(0.98); }
+    .slot-item:active {
+      transform: scale(0.98);
+    }
 
     .slot-item-icon {
       width: 32px;
       height: 32px;
       border-radius: var(--radius-sm);
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--cws-blue), var(--cws-purple));
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 13px;
+      color: #fff;
+      font-weight: 600;
       flex-shrink: 0;
     }
 
@@ -463,7 +567,7 @@
     .slot-item-day {
       font-size: 10px;
       font-weight: 600;
-      color: var(--primary-text);
+      color: var(--cws-blue);
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
@@ -478,23 +582,23 @@
     .slot-item-cta {
       font-size: 11px;
       font-weight: 600;
-      color: var(--primary-text);
+      color: var(--cws-blue);
       padding: 4px 10px;
       border-radius: 6px;
-      background: rgba(37, 99, 235, 0.12);
+      background: rgba(44, 100, 231, 0.12);
       transition: all 0.15s;
       flex-shrink: 0;
     }
 
     .slot-item:hover .slot-item-cta {
-      background: var(--primary);
+      background: var(--cws-blue);
       color: #fff;
     }
 
     /* ── Estimate Card ────────────────────────────────────────── */
     .estimate-card {
-      background: var(--green-soft);
-      border: 1px solid var(--green-border);
+      background: var(--cws-green-soft);
+      border: 1px solid var(--cws-green-border);
       border-radius: var(--radius);
       padding: 14px;
       margin-top: 8px;
@@ -505,7 +609,7 @@
     .est-header {
       font-weight: 600;
       font-size: 12px;
-      color: var(--green-text);
+      color: var(--cws-green-text);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -519,17 +623,24 @@
       justify-content: space-between;
       align-items: center;
       padding: 6px 0;
-      border-bottom: 1px solid rgba(0,0,0,0.04);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       font-size: 12.5px;
       color: var(--text3);
     }
 
-    .est-row:last-of-type { border: none; }
-    .est-row .price { font-weight: 500; color: var(--text2); font-size: 12px; }
+    .est-row:last-of-type {
+      border: none;
+    }
+
+    .est-row .price {
+      font-weight: 500;
+      color: var(--text2);
+      font-size: 12px;
+    }
 
     .est-divider {
       height: 1px;
-      background: var(--green-border);
+      background: var(--cws-green-border);
       margin: 6px 0;
     }
 
@@ -538,7 +649,7 @@
       justify-content: space-between;
       font-size: 14px;
       font-weight: 600;
-      color: var(--green-text);
+      color: var(--cws-green-text);
       margin-top: 2px;
     }
 
@@ -551,8 +662,8 @@
 
     /* ── Booking Confirmation ─────────────────────────────────── */
     .booking-card {
-      background: var(--green-soft);
-      border: 1px solid var(--green-border);
+      background: var(--cws-green-soft);
+      border: 1px solid var(--cws-green-border);
       border-radius: var(--radius);
       padding: 16px;
       margin-top: 8px;
@@ -560,9 +671,22 @@
       animation: msgIn 0.25s ease;
     }
 
-    .booking-icon { font-size: 28px; margin-bottom: 6px; }
-    .booking-title { font-weight: 600; font-size: 14px; color: var(--green-text); }
-    .booking-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+    .booking-icon {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .booking-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--cws-green-text);
+    }
+
+    .booking-sub {
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
 
     .booking-link {
       display: inline-flex;
@@ -571,7 +695,7 @@
       margin-top: 10px;
       padding: 7px 16px;
       border-radius: var(--radius-sm);
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--cws-blue), var(--cws-purple));
       color: #fff;
       font-size: 12px;
       font-weight: 500;
@@ -579,7 +703,9 @@
       transition: opacity 0.15s;
     }
 
-    .booking-link:hover { opacity: 0.85; }
+    .booking-link:hover {
+      opacity: 0.85;
+    }
 
     /* ── Project Card ─────────────────────────────────────────── */
     .project-cards {
@@ -589,9 +715,10 @@
       margin-top: 8px;
       max-width: 320px;
     }
+
     .project-card {
-      background: var(--primary-soft);
-      border: 1px solid var(--primary-border);
+      background: var(--surface2);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 12px;
       cursor: default;
@@ -600,65 +727,79 @@
       display: block;
       animation: msgIn 0.25s ease;
     }
+
     .project-card:hover {
-      background: rgba(37, 99, 235, 0.1);
-      border-color: rgba(37, 99, 235, 0.3);
+      background: var(--surface3);
+      border-color: var(--cws-blue-border);
     }
+
     .project-card.clickable {
       cursor: pointer;
     }
+
     .project-card.clickable:hover {
       transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+      box-shadow: 0 2px 12px var(--cws-blue-glow);
+      border-color: var(--cws-blue);
     }
+
     .pc-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 6px;
     }
+
     .pc-name {
       font-weight: 600;
       font-size: 12.5px;
-      color: var(--primary-text);
+      color: var(--cws-blue);
     }
+
     .pc-cost {
       font-size: 11px;
       font-weight: 500;
       color: var(--text3);
       white-space: nowrap;
     }
+
     .pc-desc {
       font-size: 11.5px;
       color: var(--text3);
       line-height: 1.5;
       margin-bottom: 6px;
     }
+
     .pc-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
+
     .pc-impact {
       font-size: 10.5px;
-      color: var(--green-text);
+      color: var(--cws-green-text);
       font-weight: 500;
     }
+
     .pc-link {
       font-size: 10.5px;
-      color: var(--primary-text);
+      color: var(--cws-blue);
       font-weight: 500;
       text-decoration: none;
     }
-    .pc-link:hover { text-decoration: underline; }
+
+    .pc-link:hover {
+      text-decoration: underline;
+    }
 
     /* ── Input Area ───────────────────────────────────────────── */
     .input-area {
       padding: 8px 12px 12px;
       border-top: 1px solid var(--border);
       flex-shrink: 0;
-      backdrop-filter: blur(16px);
-      background: var(--bg-header);
+      backdrop-filter: blur(20px);
+      background: rgba(10, 12, 18, 0.92);
     }
 
     .input-row {
@@ -673,8 +814,8 @@
     }
 
     .input-row:focus-within {
-      border-color: rgba(37, 99, 235, 0.3);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.05);
+      border-color: var(--cws-blue-border);
+      box-shadow: 0 0 0 2px rgba(44, 100, 231, 0.08);
     }
 
     .input-attach {
@@ -697,7 +838,10 @@
       color: var(--text3);
     }
 
-    .input-attach svg { width: 16px; height: 16px; }
+    .input-attach svg {
+      width: 16px;
+      height: 16px;
+    }
 
     .input-mic {
       width: 32px;
@@ -725,11 +869,21 @@
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
     }
 
-    .input-mic svg { width: 16px; height: 16px; }
+    .input-mic svg {
+      width: 16px;
+      height: 16px;
+    }
 
     .input-text {
       flex: 1;
@@ -746,14 +900,19 @@
       padding: 5px 2px;
     }
 
-    .input-text::placeholder { color: var(--muted); }
-    .input-text::-webkit-scrollbar { display: none; }
+    .input-text::placeholder {
+      color: var(--muted);
+    }
+
+    .input-text::-webkit-scrollbar {
+      display: none;
+    }
 
     .input-send {
       width: 32px;
       height: 32px;
       border-radius: var(--radius-sm);
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--cws-blue), var(--cws-purple));
       border: none;
       cursor: pointer;
       display: flex;
@@ -761,11 +920,22 @@
       justify-content: center;
       flex-shrink: 0;
       transition: all 0.15s;
+      box-shadow: 0 2px 8px var(--cws-blue-glow);
     }
 
-    .input-send:hover { background: var(--primary-hover); }
-    .input-send:active { transform: scale(0.93); }
-    .input-send svg { width: 15px; height: 15px; fill: white; }
+    .input-send:hover {
+      opacity: 0.9;
+    }
+
+    .input-send:active {
+      transform: scale(0.93);
+    }
+
+    .input-send svg {
+      width: 15px;
+      height: 15px;
+      fill: white;
+    }
 
     .input-footer {
       font-size: 10px;
@@ -775,7 +945,9 @@
       opacity: 0.6;
     }
 
-    input[type="file"] { display: none; }
+    input[type="file"] {
+      display: none;
+    }
 
     /* ── Toast ────────────────────────────────────────────────── */
     .toast {
@@ -800,7 +972,10 @@
     }
 
     @keyframes toastIn {
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
     }
 
     /* ── Responsive ───────────────────────────────────────────── */
@@ -810,6 +985,7 @@
         border-left: none;
         border-right: none;
       }
+
       .quick-actions {
         grid-template-columns: 1fr;
       }
@@ -823,7 +999,7 @@
     <header class="header">
       <div class="header-avatar" aria-hidden="true">A</div>
       <div class="header-info">
-        <div class="header-title" id="header-title">Amit — CWS Technology</div>
+        <div class="header-title" id="header-title">CWS Technology</div>
         <div class="header-status">
           <span class="status-dot"></span>
           <span>Online</span>
@@ -832,8 +1008,9 @@
       </div>
       <div class="header-actions">
         <button class="icon-btn" onclick="newChat()" title="New chat" aria-label="Start new conversation">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 5v14M5 12h14"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14" />
           </svg>
         </button>
       </div>
@@ -865,23 +1042,28 @@
     <!-- Input -->
     <div class="input-area">
       <div class="input-row">
-        <button class="input-attach" onclick="document.getElementById('file-input').click()" title="Attach file" aria-label="Attach a file">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+        <button class="input-attach" onclick="document.getElementById('file-input').click()" title="Attach file"
+          aria-label="Attach a file">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path
+              d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
           </svg>
         </button>
-        <textarea class="input-text" id="input" placeholder="Describe your project..." rows="1" aria-label="Message input"></textarea>
+        <textarea class="input-text" id="input" placeholder="Describe your project..." rows="1"
+          aria-label="Message input"></textarea>
         <button class="input-mic" onclick="toggleVoice()" id="mic-btn" title="Voice input" aria-label="Voice input">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
           </svg>
         </button>
         <button class="input-send" onclick="send()" id="send-btn" aria-label="Send message">
           <svg viewBox="0 0 24 24">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
           </svg>
         </button>
       </div>
@@ -903,7 +1085,7 @@
         document.getElementById('header-title').textContent = d.business;
         document.title = d.business + ' — Sales Agent';
       }
-    }).catch(() => {});
+    }).catch(() => { });
 
     // ── Markdown renderer ───────────────────────────────────────
     function md(text) {
@@ -1054,7 +1236,7 @@
             s.style.pointerEvents = 'none';
           });
           item.style.opacity = '1';
-          item.style.borderColor = 'var(--primary)';
+          item.style.borderColor = 'var(--cws-blue)';
           send(slot.day + ', ' + slot.date + ' at ' + slot.time);
         };
 
@@ -1072,7 +1254,7 @@
       const card = document.createElement('div');
       card.className = 'estimate-card';
       const cur = est.currency || '$';
-      const fmt = n => cur + ' ' + Number(n).toLocaleString();
+      const fmt = n => cur === '$' ? '$' + Number(n).toLocaleString() : cur + ' ' + Number(n).toLocaleString();
 
       const items = (est.items || []).map(i =>
         '<div class="est-row"><span>' + i.name + '</span><span class="price">' +
@@ -1085,12 +1267,12 @@
         '<div class="est-divider"></div>' +
         '<div class="est-total"><span>Total</span><span>' + fmt(est.totalMin) + ' - ' + fmt(est.totalMax) + '</span></div>' +
         '<div class="est-meta">' +
-          'Timeline: ' + (est.timeline || 'TBD') + '<br>' +
-          'Valid for ' + (est.validDays || 30) + ' days<br>' +
-          (est.policies?.payment || '50% advance, 50% on delivery') +
+        'Timeline: ' + (est.timeline || 'TBD') + '<br>' +
+        'Valid for ' + (est.validDays || 30) + ' days<br>' +
+        (est.policies?.payment || '50% advance, 50% on delivery') +
         '</div>' +
-        '<div style="margin-top:10px;padding:8px 10px;background:rgba(0,0,0,0.03);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--text3);line-height:1.5">' +
-          'Please note: This is a high-level estimate, not the final one. The final estimate will be provided after a discussion with our Associate.' +
+        '<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--text3);line-height:1.5">' +
+        'Please note: This is a high-level estimate, not the final one. The final estimate will be provided after a discussion with our Associate.' +
         '</div>';
 
       container.appendChild(card);
@@ -1131,7 +1313,7 @@
         card.className = 'project-card' + (hasUrl ? ' clickable' : '');
 
         let html = '<div class="pc-header"><div class="pc-name">' + esc(p.name) + '</div>';
-        if (p.cost) html += '<div class="pc-cost">INR ' + Number(p.cost).toLocaleString() + '</div>';
+        if (p.cost) html += '<div class="pc-cost">$' + Number(p.cost).toLocaleString() + '</div>';
         html += '</div>';
 
         if (p.description || p.scope) html += '<div class="pc-desc">' + esc(p.description || p.scope || '') + '</div>';
@@ -1250,14 +1432,14 @@
         '<h2>Hi, I\'m Amit</h2>' +
         '<p>I can help you plan and estimate your project. What are you looking to do?</p>' +
         '<div class="quick-actions">' +
-          '<button class="quick-action" onclick="send(\'Build a new product\')">' +
-            '<span class="quick-action-icon">+</span> Build a new product</button>' +
-          '<button class="quick-action" onclick="send(\'Improve an existing system\')">' +
-            '<span class="quick-action-icon">^</span> Improve existing system</button>' +
-          '<button class="quick-action" onclick="send(\'Fix an issue\')">' +
-            '<span class="quick-action-icon">!</span> Fix an issue</button>' +
-          '<button class="quick-action" onclick="send(\'Just exploring an idea\')">' +
-            '<span class="quick-action-icon">~</span> Exploring an idea</button>' +
+        '<button class="quick-action" onclick="send(\'Build a new product\')">' +
+        '<span class="quick-action-icon">+</span> Build a new product</button>' +
+        '<button class="quick-action" onclick="send(\'Improve an existing system\')">' +
+        '<span class="quick-action-icon">^</span> Improve existing system</button>' +
+        '<button class="quick-action" onclick="send(\'Fix an issue\')">' +
+        '<span class="quick-action-icon">!</span> Fix an issue</button>' +
+        '<button class="quick-action" onclick="send(\'Just exploring an idea\')">' +
+        '<span class="quick-action-icon">~</span> Exploring an idea</button>' +
         '</div>';
 
       messages.appendChild(welcome);
@@ -1295,14 +1477,7 @@
       recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = true;
-      recognition.lang = 'en-IN'; // Supports Hindi, English, Hinglish well
-
-      // Try to detect language from existing conversation
-      const msgs = document.querySelectorAll('.msg-bubble');
-      if (msgs.length > 0) {
-        // Keep en-IN as it handles Hindi+English mix best for Indian market
-        recognition.lang = 'en-IN';
-      }
+      recognition.lang = 'en-IN';
 
       isRecording = true;
       const micBtn = document.getElementById('mic-btn');

@@ -61,16 +61,18 @@ const negotiationModel = gemini();
 const bookingModel = gemini(bookingTools);
 
 // ── Business Context ──────────────────────────────────────────────────
+const ccy = pricing.currency;
+const cf = (n: number) => ccy === '$' ? `$${n.toLocaleString()}` : `${ccy} ${n.toLocaleString()}`;
 const BIZ = `
 Business: ${pricing.businessName}
 ${pricing.tagline}
 Currency: ${pricing.currency}
 
 Available Services & Pricing:
-${pricing.services.map(s => `- ${s.name}: ${pricing.currency} ${s.minPrice.toLocaleString()} - ${s.maxPrice.toLocaleString()} (${s.timeline})\n  Includes: ${s.includes.join(', ')}`).join('\n')}
+${pricing.services.map(s => `- ${s.name}: ${cf(s.minPrice)} - ${cf(s.maxPrice)} (${s.timeline})\n  Includes: ${s.includes.join(', ')}`).join('\n')}
 
 Past Projects (use for building credibility):
-${pricing.pastProjects.map(p => `- ${p.name}: ${pricing.currency} ${p.cost.toLocaleString()}, ${p.timeline}. ${p.scope}. ${p.impact}`).join('\n')}
+${pricing.pastProjects.map(p => `- ${p.name}: ${cf(p.cost)}, ${p.timeline}. ${p.scope}. ${p.impact}`).join('\n')}
 
 Policies: payment="${pricing.policies.payment}" | revisions="${pricing.policies.revisions}" | support="${pricing.policies.support}" | ownership="${pricing.policies.ownership}"
 `.trim();
@@ -202,7 +204,7 @@ Detect the language the user writes in and RESPOND IN THE SAME LANGUAGE.
 - English → respond in English
 - Hinglish (Hindi+English mix) → respond in Hinglish
 - If they switch languages mid-conversation, switch with them.
-- Always keep currency as INR regardless of language.
+- Always keep currency as USD ($) regardless of language.
 
 ═══ GIBBERISH / UNCLEAR INPUT ═══
 GREETINGS ARE NOT GIBBERISH. If user says "Hi", "Hello", "Hey", "Namaste", "Hlo" — respond warmly and guide them:
@@ -241,11 +243,19 @@ Only ask follow-up questions if their message is truly vague (e.g., just "Build 
 After they describe it, SUMMARIZE in 1-2 lines and ask "Did I get that right?"
 
 PHASE 2 — GATHERING (message 3-6):
-Ask these ONE AT A TIME, only what hasn't been answered yet:
-1. "Who will use this? Customers, internal team, or something else?"
-2. "What are the must-have features for version 1?"
-3. "Do you have any reference apps or websites in mind?"
-4. "How soon are you looking to get this live?"
+Ask these ONE AT A TIME, only what hasn't been answered yet. SKIP questions where the answer is obvious from the project description:
+- E-commerce, store, shop, marketplace → SKIP "Who will use this?" (obviously customers)
+- Internal tool, admin panel, dashboard, CRM, ERP → SKIP "Who will use this?" (obviously internal team)
+- Mobile app, website for business, SaaS → SKIP "Who will use this?" (obviously customers/users)
+- ONLY ask "Who will use this?" if the project type is truly ambiguous (e.g., "a platform", "a system" with no clear user type)
+
+SMART QUESTIONS (ask only what's relevant and not already obvious):
+1. "What features do you need?" or "What all should it have?" — ask naturally, NOT "for version 1" or "must-have features"
+2. "Do you have any reference apps or websites in mind?"
+3. "How soon are you looking to get this live?"
+4. "Who will use this?" — ONLY if user type is unclear
+
+IMPORTANT: Talk like a human, not a form. Instead of "What are the must-have features for version 1?", say something like "What features are you looking for?" or "What all do you need on the site?"
 
 After 2-3 answers, provide a RUNNING SUMMARY and ask "Anything important I'm missing?"
 
@@ -263,7 +273,7 @@ ONLY after scope is confirmed. DO NOT repeat this if already said.
 Briefly explain approach (2 sentences max).
 Call search_knowledge_base tool with the client's requirements. If results contain relevant past projects, proactively mention 1-2 as social proof:
 "We've actually built something similar — [Project Name] was a [scope] that [impact]."
-Give SOFT price range: "Projects like this typically fall in the range of INR X - Y."
+Give SOFT price range: "Projects like this typically fall in the range of $X - $Y."
 Then ask: "Where should I send the detailed estimate? I just need your name and email."
 IMPORTANT: If the user says "estimate first" or "show me the estimate before giving email" — STILL call search_knowledge_base and build_estimate tools and present the estimate. Be flexible, don't force email. Just add at the end: "Want me to email this to you? Just share your name and email."
 
@@ -271,7 +281,7 @@ IMPORTANT: If the user says "estimate first" or "show me the estimate before giv
 If the user asks to see your work, past projects, or portfolio:
 1. Call search_knowledge_base with "portfolio projects" or "our work"
 2. Present matching projects in this format for each:
-   "**[Project Name]** — INR [Cost], [Timeline]\n[Scope]\n[Impact]"
+   "**[Project Name]** — $[Cost], [Timeline]\n[Scope]\n[Impact]"
 3. If a project has a "url" in the search results, add: "View it here: [url]"
 4. Keep it brief — max 3-4 projects per response
 5. Then ask: "Want to discuss something similar for your project?"
@@ -285,7 +295,11 @@ When the user provides name/email:
    - Option 2: Full Build — expanded feature set
 4. Present both options clearly with timeline and cost for each
 5. Add this disclaimer AFTER the options: "Please note: This is a high-level estimate of your project, not the final one. The final estimate will be provided after a discussion with our Associate."
-6. Then say: "This is the kind of project where a quick call can save a lot of back and forth. Want me to share a couple of time slots?"
+6. Then say: "Want me to email this estimate to you? Or would you prefer a quick call to discuss the details?"
+7. If user says "email" or "yes" to email → say "I'll send the estimate to [email]. Want to book a quick discovery call too?"
+8. If user says "call" or "book" → say "Great! What day works best for you?" (let the booking agent handle the rest)
+9. If user says "no" to both → say "No problem! Take your time. You can always reach me here if you have questions."
+NEVER automatically show time slots after the estimate. Only show slots if the user explicitly agrees to book a call.
 
 ═══ PROACTIVE CREDIBILITY ═══
 You are an enterprise-level sales consultant. Clients don't always ask for proof — you OFFER it.
@@ -367,8 +381,8 @@ async function booking(state: GState) {
   const lastHumanText = typeof lastHumanMsg?.content === 'string' ? lastHumanMsg.content : '';
   const lct = lastHumanText.toLowerCase();
   const pickedTime = lct.match(/(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/) ||
-                     lct.match(/\d{1,2}(:\d{2})?\s*(am|pm)/) ||
-                     lct.includes('book') || lct.includes('confirm');
+    lct.match(/\d{1,2}(:\d{2})?\s*(am|pm)/) ||
+    lct.includes('book') || lct.includes('confirm');
 
   // Build the one instruction that matters
   let instruction;

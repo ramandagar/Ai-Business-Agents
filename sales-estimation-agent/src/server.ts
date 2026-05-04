@@ -242,13 +242,14 @@ app.post('/api/chat', async (req, res) => {
     let slots = extractSlots(newMessages);
 
     // ══════════════════════════════════════════════════════════════
-    // AUTO-SLOTS: Safety Net (Estimate or AI Hallucination)
+    // AUTO-SLOTS: Only when user explicitly wants to book a call
     // ══════════════════════════════════════════════════════════════
     const isDemandingSlots = reply.toLowerCase().includes('time slot') || reply.toLowerCase().includes('choose a time') || reply.toLowerCase().includes('pick a time') || reply.toLowerCase().includes('schedule a call') || reply.toLowerCase().includes('book a call') || reply.toLowerCase().includes('discovery call');
 
-    if ((estimate || isDemandingSlots) && (!slots || slots.length === 0)) {
+    // Only auto-fetch slots when user is explicitly asking to book, NOT when estimate is shown
+    if (isDemandingSlots && (!slots || slots.length === 0)) {
       try {
-        console.log('📅 Auto-fetching slots (Estimate generated or AI bypassed tool)...');
+        console.log('📅 Auto-fetching slots (User wants to book a call)...');
         slots = await fetchAvailableSlots(7);
       } catch (err: any) {
         console.warn('Auto-slot fetch failed:', err.message);
