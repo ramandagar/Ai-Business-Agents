@@ -1074,10 +1074,96 @@
 
   <script>
     const API_URL = window.location.origin;
-    const THREAD_KEY = 'sa_thread_v2';
-    let threadId = localStorage.getItem(THREAD_KEY) || ('t_' + Math.random().toString(36).slice(2) + Date.now());
-    localStorage.setItem(THREAD_KEY, threadId);
+    const COOKIE_NAME = 'cws_chat_thread';
+    const COOKIE_HOURS = 5;
+
+    // ── Cookie helpers ──────────────────────────────────────────
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? match[2] : null;
+    }
+    function setCookie(name, value, hours) {
+      const d = new Date();
+      d.setTime(d.getTime() + hours * 60 * 60 * 1000);
+      document.cookie = name + '=' + value + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+    }
+    function deleteCookie(name) {
+      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Lax';
+    }
+
+    // ── Thread ID from cookie (5hr expiry) ──────────────────────
+    function newThreadId() {
+      return 't_' + Math.random().toString(36).slice(2) + Date.now();
+    }
+
+    let threadId = getCookie(COOKIE_NAME) || newThreadId();
+    setCookie(COOKIE_NAME, threadId, COOKIE_HOURS);
     let busy = false;
+
+    // ── Restore previous chat from Supabase ──────────────────────
+    async function restoreChat() {
+      const savedThreadId = getCookie(COOKIE_NAME);
+      if (!savedThreadId) return;
+
+      try {
+        const res = await fetch(API_URL + '/api/chat/' + savedThreadId);
+        const data = await res.json();
+        if (!data.messages || data.messages.length === 0) return;
+
+        // Remove welcome screen
+        const welcome = document.getElementById('welcome');
+        if (welcome) welcome.remove();
+
+        const container = document.getElementById('messages');
+
+        // Render each saved message (skip animations for bulk restore)
+        for (const msg of data.messages) {
+          const role = msg.role === 'user' ? 'user' : 'agent';
+          const group = document.createElement('div');
+          group.className = 'msg-group ' + role;
+
+          const avatar = document.createElement('div');
+          avatar.className = 'msg-avatar';
+          avatar.setAttribute('aria-hidden', 'true');
+          avatar.textContent = role === 'agent' ? 'A' : 'U';
+
+          const body = document.createElement('div');
+          body.className = 'msg-body';
+
+          const bubble = document.createElement('div');
+          bubble.className = 'msg-bubble';
+          if (role === 'agent') {
+            bubble.innerHTML = md(msg.content);
+          } else {
+            bubble.textContent = msg.content;
+          }
+
+          const ts = document.createElement('div');
+          ts.className = 'msg-time';
+          ts.textContent = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          body.appendChild(bubble);
+          body.appendChild(ts);
+          group.appendChild(avatar);
+          group.appendChild(body);
+          container.appendChild(group);
+
+          // Restore structured data (estimate, slots, projects) from metadata
+          if (role === 'agent' && msg.metadata) {
+            if (msg.metadata.estimate) renderEstimate(msg.metadata.estimate, body);
+            if (msg.metadata.projects && msg.metadata.projects.length > 0) renderProjects(msg.metadata.projects, body);
+          }
+        }
+
+        scrollBottom();
+        console.log('[Restore] Loaded ' + data.messages.length + ' messages');
+      } catch (err) {
+        console.warn('[Restore] Failed:', err);
+      }
+    }
+
+    // Restore chat on load
+    restoreChat();
 
     // ── Init ────────────────────────────────────────────────────
     fetch(API_URL + '/health').then(r => r.json()).then(d => {
@@ -1417,8 +1503,9 @@
 
     // ── New Chat ────────────────────────────────────────────────
     function newChat() {
-      threadId = 't_' + Math.random().toString(36).slice(2) + Date.now();
-      localStorage.setItem(THREAD_KEY, threadId);
+      deleteCookie(COOKIE_NAME);
+      threadId = newThreadId();
+      setCookie(COOKIE_NAME, threadId, COOKIE_HOURS);
       setAgent(null);
 
       const messages = document.getElementById('messages');

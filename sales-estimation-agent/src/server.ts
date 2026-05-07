@@ -7,6 +7,7 @@ import multer from 'multer';
 import { HumanMessage, BaseMessage } from '@langchain/core/messages';
 import { getGraph } from './graph';
 import { kb } from './services/knowledgeBase';
+import { chatStorage } from './services/chatStorage';
 import { fetchAvailableSlots } from './tools/index';
 import pricing from '../pricing.json';
 
@@ -180,6 +181,17 @@ function extractProjects(messages: BaseMessage[], aiReply: string): any[] | null
 // ── Health ─────────────────────────────────────────────────────────
 app.get('/health', (_, res) => res.json({ ok: true, business: pricing.businessName, tagline: pricing.tagline }));
 
+// ── Chat History (for restoring conversations) ────────────────────
+app.get('/api/chat/:threadId', async (req, res) => {
+  try {
+    const messages = await chatStorage.loadMessages(req.params.threadId);
+    return res.json({ messages });
+  } catch (err: any) {
+    console.error('History load error:', err.message);
+    return res.json({ messages: [] });
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════════
 // CHAT ENDPOINT — with auto-slots on estimate + security
 // ═══════════════════════════════════════════════════════════════════
@@ -255,6 +267,26 @@ app.post('/api/chat', async (req, res) => {
         console.warn('Auto-slot fetch failed:', err.message);
       }
     }
+
+    // ══════════════════════════════════════════════════════════════
+    // SAVE TO SUPABASE (non-blocking)
+    // ══════════════════════════════════════════════════════════════
+    const agentName = result.activeAgent || 'estimation';
+    const meta: Record<string, any> = {};
+    if (estimate) meta.estimate = estimate;
+    if (slots && slots.length > 0) meta.slots = true;
+    if (projects && projects.length > 0) meta.projects = projects;
+
+    // Extract client info from conversation if available
+    const emailMatch = cleanMsg.match(/[\w.-]+@[\w.-]+\.\w+/);
+    const clientEmail = emailMatch ? emailMatch[0] : '';
+    if (clientEmail) {
+      chatStorage.updateClientInfo(thread_id, undefined, clientEmail).catch(() => {});
+    }
+
+    // Save user message and AI reply (fire-and-forget)
+    chatStorage.saveMessage(thread_id, 'user', cleanMsg).catch(() => {});
+    chatStorage.saveMessage(thread_id, 'agent', reply, { agent: agentName, metadata: meta }).catch(() => {});
 
     return res.json({
       reply,

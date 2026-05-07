@@ -214,3 +214,40 @@ create policy "Public read projects" on projects
 
 create policy "Public read services" on services
   for select using (true);
+
+-- ══════════════════════════════════════════════════════════════
+-- 10. Conversations table (chat persistence)
+-- ══════════════════════════════════════════════════════════════
+create table if not exists conversations (
+  id           uuid primary key default gen_random_uuid(),
+  thread_id    text unique not null,
+  client_name  text default '',
+  client_email text default '',
+  source       text default 'direct',  -- 'direct' or 'widget'
+  created_at   timestamptz default now(),
+  updated_at   timestamptz default now()
+);
+
+-- 11. Messages table (individual chat messages)
+create table if not exists messages (
+  id           uuid primary key default gen_random_uuid(),
+  thread_id    text not null references conversations(thread_id) on delete cascade,
+  role         text not null,        -- 'user', 'agent'
+  content      text not null,
+  agent        text default '',      -- 'estimation', 'negotiation', 'booking'
+  metadata     jsonb default '{}',   -- estimate, slots, projects data
+  created_at   timestamptz default now()
+);
+
+-- Indexes for fast lookup
+create index if not exists idx_messages_thread on messages(thread_id, created_at);
+create index if not exists idx_conversations_updated on conversations(updated_at desc);
+
+-- RLS for conversation tables
+alter table conversations enable row level security;
+alter table messages enable row level security;
+
+create policy "Allow all on conversations" on conversations
+  for all using (true) with check (true);
+create policy "Allow all on messages" on messages
+  for all using (true) with check (true);

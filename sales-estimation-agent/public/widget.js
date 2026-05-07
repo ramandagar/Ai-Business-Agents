@@ -23,9 +23,24 @@
     surface3: '#1e2233',
   };
 
-  const KEY = 'sa_w_' + URL.replace(/[^a-z]/gi, '');
-  let thread = localStorage.getItem(KEY) || ('w_' + Math.random().toString(36).slice(2) + Date.now());
-  localStorage.setItem(KEY, thread);
+  const COOKIE_NAME = 'cws_widget_thread';
+  const COOKIE_HOURS = 5;
+
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? match[2] : null;
+  }
+  function setCookie(name, value, hours) {
+    const d = new Date();
+    d.setTime(d.getTime() + hours * 60 * 60 * 1000);
+    document.cookie = name + '=' + value + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+  }
+  function deleteCookie(name) {
+    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Lax';
+  }
+
+  let thread = getCookie(COOKIE_NAME) || ('w_' + Math.random().toString(36).slice(2) + Date.now());
+  setCookie(COOKIE_NAME, thread, COOKIE_HOURS);
 
   let open = false, busy = false;
 
@@ -339,6 +354,27 @@
     if (!preset) inp.focus();
   }
 
+  // ── Restore chat from Supabase ────────────────────────────────
+  let restored = false;
+  async function restoreChat() {
+    const savedThread = getCookie(COOKIE_NAME);
+    if (!savedThread || restored) return;
+    try {
+      const r = await fetch(URL + '/api/chat/' + savedThread);
+      const data = await r.json();
+      if (!data.messages || data.messages.length === 0) return;
+      restored = true;
+      for (const msg of data.messages) {
+        const role = msg.role === 'user' ? 'user' : 'agent';
+        const d = document.createElement('div');
+        d.className = 'wm ' + (role === 'agent' ? 'wa' : 'wu');
+        if (role === 'agent') d.innerHTML = mdW(msg.content); else d.textContent = msg.content;
+        msgs.appendChild(d);
+      }
+      scroll();
+    } catch (e) { }
+  }
+
   function toggle() {
     open = !open;
     panel.classList.toggle('open', open);
@@ -346,10 +382,12 @@
       ? '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'
       : '<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>';
     if (open && !msgs.children.length) {
-      setTimeout(() => {
-        addMsg('agent', "Hi! I'm Amit from CWS Technology. Tell me what you're looking to build and I'll get you a cost estimate.");
+      restoreChat().then(() => {
+        if (!msgs.children.length) {
+          addMsg('agent', "Hi! I'm Amit from CWS Technology. Tell me what you're looking to build and I'll get you a cost estimate.");
+        }
         inp.focus();
-      }, 150);
+      });
     }
     if (open) setTimeout(() => { inp.focus(); scroll(); }, 200);
   }
